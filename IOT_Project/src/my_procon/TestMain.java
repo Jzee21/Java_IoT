@@ -11,34 +11,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-class PutRunnable implements Runnable {
-
-	private SharedTable table;
-	
-	PutRunnable(SharedTable table) {
-		this.table = table;
-	}
-	
-	@Override
-	public void run() {
-		table.put();
-	}
-}
-
-class GetRunnable implements Runnable {
-
-	private SharedTable table;
-	
-	GetRunnable(SharedTable table) {
-		this.table = table;
-	}
-	
-	@Override
-	public void run() {
-		System.out.println("get() " + table.get());
-	}
-}
-
 class ViewRunnable implements Runnable {
 
 	private SharedTable table;
@@ -83,14 +55,14 @@ public class TestMain extends Application {
 		putBtn.setPrefSize(200, 50);
 		putBtn.setOnAction((e) -> {
 			//
-			new Thread(new PutRunnable(SharedTable.getInstance())).start();
+			new Thread(new Producer(SharedTable.getInstance())).start();
 		});
 		
 		getBtn = new Button("Get");
 		getBtn.setPrefSize(200,  50);
 		getBtn.setOnAction((e) -> {
 			//
-			new Thread(new GetRunnable(SharedTable.getInstance())).start();
+			new Thread(new Consumer(SharedTable.getInstance())).start();
 		});
 		
 		viewBtn = new Button("View");

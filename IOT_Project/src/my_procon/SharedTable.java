@@ -61,6 +61,7 @@ public class SharedTable {
 		notify();  // ??
 		int result = this.table.get(0);
 		this.table.remove(0);
+		this.table.remove(0);
 		return result;
 	}
 	
