@@ -34,5 +34,25 @@ public class JavaFX_Test extends Application {
 	
 	public static void main(String[] args) {
 		launch();
+//		System.out.println("main");
+//		try {
+//			Thread.sleep(100);
+//			Singleton.getInstance();
+//		} catch (Exception e) {
+//			// TODO: handle exception
+//		}
 	}
 }
+
+//class Singleton {
+//	private static Singleton instance = new Singleton();
+//	private Singleton() {
+//		System.out.println("created");
+//	}
+//	public static Singleton getInstance() {
+//		if (instance == null) {
+//			instance =  new Singleton();
+//		}
+//		return instance;
+//	}
+//}
