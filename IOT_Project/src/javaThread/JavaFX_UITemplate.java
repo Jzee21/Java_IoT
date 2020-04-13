@@ -61,7 +61,7 @@ public class JavaFX_UITemplate extends Application {
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("예제용 JavaFX");
 		primaryStage.setOnCloseRequest(e -> {
-			System.exit(0);
+			// System.exit(0);
 		});
 		primaryStage.show();
 		
