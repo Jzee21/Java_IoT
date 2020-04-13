@@ -1,4 +1,4 @@
-package javaThread;
+package javaFX;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
