@@ -62,11 +62,15 @@ public class EX02_NotepadInput extends Application {
 				while ((line = br.readLine()) != null) {
 					printMsg(line);
 				}
+				br.close();
+				fr.close();
 			} catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} catch (IOException e2) {
 				e2.printStackTrace();
+			} finally {
+				//
 			}
 			
 		});
