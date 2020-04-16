@@ -57,10 +57,15 @@ public class EX02_EchoClient extends Application {
 				socket = new Socket("localhost", 55556);
 				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				pr = new PrintWriter(socket.getOutputStream());
-				
-				System.out.println("[" + socket.getInetAddress() + "] connected");
-				tf.setDisable(false);
-				connBtn.setDisable(true);
+								
+				String msg = br.readLine();
+				if(msg.equals("Error")) {
+					printMsg("현재 접속자가 많아 서비스 이용이 어렵습니다.\n잠시 후 다시 이용해주세요.");					
+				} else {					
+					System.out.println("[" + socket.getInetAddress() + "] connected");
+					tf.setDisable(false);
+					connBtn.setDisable(true);
+				}
 				
 			} catch (UnknownHostException e1) {
 				e1.printStackTrace();
