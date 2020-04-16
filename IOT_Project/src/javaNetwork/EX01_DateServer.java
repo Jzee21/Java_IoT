@@ -16,7 +16,7 @@ public class EX01_DateServer {
 		try {
 			// 1. 클라이언트의 Socket 접속을 기다리는 ServerSocket 생성
 			ServerSocket server = new ServerSocket(5556);	// new ServerSocket(Port_number)
-			System.out.println("server create");
+			System.out.println("[server created]");
 			
 			// 2. 클라이언트의 접속을 기다리는 method 호출
 			Socket s = server.accept();		// blocking method
