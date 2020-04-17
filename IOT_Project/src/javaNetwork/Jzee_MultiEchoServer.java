@@ -19,7 +19,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-public class Jzee_EchoSocketThreadPool extends Application {
+public class Jzee_MultiEchoServer extends Application {
 	
 	private TextArea ta;
 	private Button startBtn, stopBtn;
@@ -136,7 +136,7 @@ class EchoSocket implements Runnable {
 	
 	private Socket socket;
 	private String endKeyword = "@EXIT";
-	private Jzee_EchoSocketThreadPool clone;
+	private Jzee_MultiEchoServer clone;
 	
 	EchoSocket() {}
 	EchoSocket(Socket socket) {
@@ -144,7 +144,7 @@ class EchoSocket implements Runnable {
 	}
 	EchoSocket(Socket socket, Object clone) {
 		this.socket = socket;
-		this.clone = (Jzee_EchoSocketThreadPool)clone;
+		this.clone = (Jzee_MultiEchoServer)clone;
 	}
 	
 	@Override
