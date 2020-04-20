@@ -58,7 +58,8 @@ public class Jzee_SocketCloseTestClient extends Application {
 			ta.clear();
 			printMsg("before socket : " + socket);
 			try {
-				socket = new Socket("localhost", 55566);
+//				socket = new Socket("localhost", 55566);
+				socket = new Socket("70.12.60.91", 55566);
 				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				pr = new PrintWriter(socket.getOutputStream());
 				
@@ -82,6 +83,9 @@ public class Jzee_SocketCloseTestClient extends Application {
 		disconnBtn.setOnAction((e) -> {
 			printMsg("disconn clicked");
 			executor.shutdownNow();
+			printMsg("socket : " + socket);
+			printMsg("socket isConn : " + socket.isConnected());
+			printMsg("socket isClose : " + socket.isClosed());
 		});
 		
 		tf = new TextField();
@@ -148,11 +152,15 @@ public class Jzee_SocketCloseTestClient extends Application {
 			} finally {
 				try {
 					printMsg("finally");
-					socket.close();
-					printMsg("close socket : " + socket);
-					
+					pr.println("@EXIT");
+					pr.flush();
 					pr.close();
 					br.close();
+					socket.close();
+					printMsg("close socket : " + socket);
+					printMsg("socket isConn : " + socket.isConnected());
+					printMsg("socket isClose : " + socket.isClosed());
+					
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
