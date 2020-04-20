@@ -32,6 +32,10 @@ public class Jzee_ObjectClient {
 //			oin.close();
 			socket.close();
 			
+			//
+//			String msg = "a,b,c,d,e";
+//			String[] arr = msg.split(",");
+			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
