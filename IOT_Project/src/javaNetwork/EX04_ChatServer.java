@@ -189,6 +189,7 @@ class ChatRunnable implements Runnable {
 //				pr.flush();
 				this.object.broadcast(line);
 			}
+			System.out.println(Thread.currentThread().getName() + " break");
 			stop();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -201,6 +202,8 @@ class ChatRunnable implements Runnable {
 			if(this.br != null) this.br.close();
 			if(this.pr != null) this.pr.close();
 			if(this.socket != null) this.socket.close();
+			System.out.println("socket status : " + socket.isConnected());	// true
+			System.out.println("socket status : " + socket.isClosed());		// true
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
