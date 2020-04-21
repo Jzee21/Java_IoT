@@ -3,12 +3,11 @@ package javaNetwork;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -44,11 +43,6 @@ public class Jzee_MultiRoomServer extends Application{
 		});
 	}
 	
-	@SuppressWarnings("unused")
-	private void throwsInterrupt() throws InterruptedException {
-		throw new InterruptedException();
-	}
-	
 	public void startServer() {
 		
 		executor = Executors.newCachedThreadPool();
@@ -71,11 +65,11 @@ public class Jzee_MultiRoomServer extends Application{
 			Socket socket = null;
 			while(true) {
 				try {
-					displayText("Ready to accept()");
+//					displayText("Ready to accept()");
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
-//						client(socket);
-//						connections.put(client.hashCode(), client);
+					Client client = new Client(socket);
+					connections.put(client.hashCode(), client);
 				} catch (SocketTimeoutException e) {					
 //						displayText("" + Thread.interrupted());
 					if(Thread.interrupted()) {
@@ -85,21 +79,20 @@ public class Jzee_MultiRoomServer extends Application{
 					break;
 				} // try				
 			} // while
-			
-			// server close
-			if(!server.isClosed()) {
-				stopServer();
-				if(socket != null && !socket.isClosed()) {
-					try {
-						socket.close();
-						server.close();
-					} catch (IOException e) {
-						// do nothing
-					}
-				}
-			} // if(!server.isClosed())
+			stopServer();
+//			// server close
+//			if(!server.isClosed()) {
+//				displayText("after stopServer");
+//				if(socket != null && !socket.isClosed()) {
+//					try {
+//						socket.close();
+//						server.close();
+//					} catch (IOException e) {
+//						// do nothing
+//					}
+//				}
+//			} // if(!server.isClosed())
 		}; // runnable
-		
 		executor.submit(runnable);
 		
 	} // startServer() 
@@ -117,7 +110,7 @@ public class Jzee_MultiRoomServer extends Application{
 			if(executor != null && executor.isShutdown()) {
 				executor.shutdownNow();
 			}
-			
+			displayText("##### Server Stoped #####");
 		} catch (Exception e) {
 			// do nothing
 		} // try
@@ -138,6 +131,7 @@ public class Jzee_MultiRoomServer extends Application{
 		startBtn.setPrefSize(200, 40);
 		startBtn.setOnAction((e) -> {
 			startServer();
+			startBtn.setDisable(true);
 		});
 		
 		stopBtn = new Button("Server Stop");
@@ -150,6 +144,7 @@ public class Jzee_MultiRoomServer extends Application{
 			} catch (IOException e1) {
 //				e1.printStackTrace();
 			}
+			startBtn.setDisable(false);
 		});
 		
 		FlowPane bottom = new FlowPane();
@@ -166,6 +161,7 @@ public class Jzee_MultiRoomServer extends Application{
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
 			//
+			stopServer();
 		});
 		primaryStage.show();
 		
@@ -179,8 +175,9 @@ public class Jzee_MultiRoomServer extends Application{
 		int userID;
 		String nickname;
 		Socket socket;
+//		BufferedReader input;
+//		PrintWriter output;
 //		List<Room> list;
-		final Object MONITOR = new Object();
 		
 		Client(Socket socket) {
 			this.socket = socket;
@@ -200,14 +197,29 @@ public class Jzee_MultiRoomServer extends Application{
 					while(!interrupt) {
 						if(input.ready()) {
 							message = input.readLine();
-//								send(message);
-							displayText(message);
+							displayText("receive : " + message);
+							if(message == null) {
+								throw new IOException();
+							}
+							for(Integer key : connections.keySet()) {
+								Client client = connections.get(key);
+								client.send(message);
+							}
 						}
 						interrupt = Thread.interrupted();
 					} // while
+//					while(true) {
+//						
+//					}
 					
 				} catch (IOException e) {
 					displayText("InputStream Create Error");
+					try {
+						socket.close();
+						connections.remove(Client.this);
+					} catch (IOException e1) {
+						// do nothing
+					}
 				} // try
 			};
 			executor.submit(runnable);
@@ -215,7 +227,20 @@ public class Jzee_MultiRoomServer extends Application{
 		
 		void send(String message) {
 			Runnable runnable = () -> {
-				
+				try {
+					PrintWriter output = new PrintWriter(socket.getOutputStream());
+					displayText("send() : " + message);
+					output.println(message);
+					output.flush();
+				} catch (Exception e) {
+					displayText("OutputStream Create Error");
+					try {
+						socket.close();
+						connections.remove(Client.this);
+					} catch (IOException e1) {
+						// do nothing
+					}
+				}
 			};
 			executor.submit(runnable);
 		} // send()
