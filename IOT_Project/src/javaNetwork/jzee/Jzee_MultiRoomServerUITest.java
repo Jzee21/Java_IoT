@@ -1,4 +1,4 @@
-package javaNetwork;
+package javaNetwork.jzee;
 
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
@@ -15,7 +15,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-public class Jzee_MultiRoomServer extends Application{
+public class Jzee_MultiRoomServerUITest extends Application{
 	
 	private TextArea textarea;
 	private Button startBtn, stopBtn;

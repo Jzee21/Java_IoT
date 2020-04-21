@@ -1,4 +1,4 @@
-package javaNetwork;
+package javaNetwork.jzee;
 
 import java.io.BufferedReader;
 import java.io.IOException;

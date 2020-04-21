@@ -1,4 +1,4 @@
-package javaNetwork;
+package javaNetwork.jzee;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javaNetwork.EX04_ChatClient.ReceiveRunnable;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;

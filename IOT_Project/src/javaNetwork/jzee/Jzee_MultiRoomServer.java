@@ -1,6 +1,10 @@
-package javaNetwork;
+package javaNetwork.jzee;
 
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,7 +19,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-public class Jzee_MultiRoomServerUITest extends Application{
+public class Jzee_MultiRoomServer extends Application{
 	
 	private TextArea textarea;
 	private Button startBtn, stopBtn;
@@ -23,10 +27,21 @@ public class Jzee_MultiRoomServerUITest extends Application{
 	private ExecutorService executor = Executors.newCachedThreadPool();
 	private ServerSocket server;
 	
+	private HashMap<Integer, Room> rooms;
+	private HashMap<Integer, Client> connections;
+	
 	public void displayText(String msg) {
 		Platform.runLater(() -> {
 			textarea.appendText(msg + "\n");
 		});
+	}
+	
+	public void startServer() {
+		List<Client> list = new Vector<Client>();
+	}
+	
+	public void stopServer() {
+		
 	}
 	
 	@Override
@@ -73,6 +88,21 @@ public class Jzee_MultiRoomServerUITest extends Application{
 	
 	public static void main(String[] args) {
 		launch();
+	}
+	
+	class Client {
+		
+		int userID;
+		String nickname;
+		Socket socket;
+		List<Room> list;
+		
+	}
+	
+	class Room {
+		int roomID;
+		String roomName;
+		List<Client> list;
 	}
 
 }

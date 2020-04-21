@@ -1,4 +1,4 @@
-package javaNetwork;
+package javaNetwork.jzee;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,7 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -24,13 +25,11 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-/*	Server
- *  클라이언트가 접속하면 현재 시간을 알아내서 클라이언트에 전송
-*/
-public class Jzee_MultiEchoServer2 extends Application {
+public class Jzee_SingleRoomChatServer extends Application {
 
 	private TextArea ta;
 	private Button startBtn, stopBtn;
+	private SingleRoom object = new SingleRoom();
 	
 	private ExecutorService executorService = Executors.newCachedThreadPool();
 	
@@ -58,21 +57,7 @@ public class Jzee_MultiEchoServer2 extends Application {
 		startBtn = new Button("Server Start");
 		startBtn.setPrefSize(150, 40);
 		startBtn.setOnAction((e) -> {
-			
-//			boolean interrupted = false;
-//			while(!interrupted) {
-//				if(this.br.ready()) {
-//					line = this.br.readLine();
-//					if(line.toUpperCase().equals("@EXIT")) {
-//						break;
-//					}
-//					pr.println(line);
-//					pr.flush();
-//				}
-//				interrupted = Thread.interrupted();
-//			}
-//			stop();
-			
+//			Thread.currentThread().getClass();
 			Runnable myRunnable = () -> {
 				
 				Runnable myInner = () -> {
@@ -83,7 +68,7 @@ public class Jzee_MultiEchoServer2 extends Application {
 						while(true) {
 							Socket socket = server.accept();
 							printMsg("[" + socket.getInetAddress() + "] Client Connected");
-							EchoCallbackJ r = new EchoCallbackJ(socket);
+							SingleChat r = new SingleChat(socket, this.object);
 							Future<String> future = executorService.submit(r);
 							printMsg("[" + future.get() + "] Client Disconnected");
 						} // while
@@ -95,7 +80,11 @@ public class Jzee_MultiEchoServer2 extends Application {
 					}
 					
 				};
-				new Thread(myInner).start();
+//				new Thread(myInner).start();
+				Thread t = new Thread(myInner);
+				t.setDaemon(true);
+				t.start();
+				// myInner
 				
 				while(true) {
 					try {
@@ -110,54 +99,21 @@ public class Jzee_MultiEchoServer2 extends Application {
 					}
 				}
 				
-			};
-			
-			Runnable runnable = () -> {	
-				try {
-					server = new ServerSocket(55566);
-					printMsg("===== [Port : " + server.getLocalPort() + "] Server Start =====");
-					
-//					while(true) {
-//						Socket socket = server.accept();
-//						printMsg("[" + socket.getInetAddress() + "] Client Connected");
-//						EchoRunnable r = new EchoRunnable(socket);
-//						executorService.execute(r);
-//						EchoCallback r = new EchoCallback(socket);
-//						Future<String> future = executorService.submit(r);
-//						printMsg("[" + future.get() + "] Client Disconnected");
-//					} // while
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			};
-			
-			executorService.execute(runnable);
+			}; // myRunnable
+			executorService.execute(myRunnable);
 			
 		});
 		
 		stopBtn = new Button("Server Stop");
 		stopBtn.setPrefSize(150, 40);
 		stopBtn.setOnAction((e) -> {
-			printMsg("===== [Port : " + server.getLocalPort() + "] Server Closing... =====");
-			executorService.shutdownNow();
-			try {
-			    if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-			        printMsg("===== Server Closing... =====");
-			        executorService.shutdownNow();
-			        if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-			            System.out.println("여전히 종료하지 않은 작업 존재");
-			        }
-			    }
-			} catch (InterruptedException e1) {
-			    executorService.shutdownNow();
-			    Thread.currentThread().interrupt();
-			}
+			
 		});
 		
 		FlowPane bottom = new FlowPane();
 		bottom.getChildren().addAll(startBtn, stopBtn);
-		bottom.setPadding(new Insets(10,10,10,10));
-		bottom.setHgap(10);
+		bottom.setPadding(new Insets(5,5,5,5));
+		bottom.setHgap(5);
 		root.setBottom(bottom);
 		
 		// stage
@@ -165,7 +121,7 @@ public class Jzee_MultiEchoServer2 extends Application {
 		stage.setScene(scene);
 		stage.setTitle("Multi Echo Server");
 		stage.setOnCloseRequest((e) -> {
-			executorService.shutdownNow();
+			
 		});
 		stage.show();
 		
@@ -176,62 +132,99 @@ public class Jzee_MultiEchoServer2 extends Application {
 	}
 }
 
-class EchoCallbackJ implements Callable<String> {
+class SingleRoom {
+	List<SingleChat> list = new ArrayList<SingleChat>();
 	
+	public SingleRoom() {}
+	
+	// didn't work!
+	public void addList(SingleChat t) {
+		list.add(t);
+		System.out.println("addList, " + list.size());
+	}
+	
+	public void removeList(SingleChat t) {
+		list.remove(t);
+	}
+	
+	public void broadcast(String msg) {
+		System.out.println("SingleRoom - broadcast()");
+		if(list.size() != 0) {
+			for(SingleChat room : list) {
+				room.update(msg);
+			}
+		}
+	}
+	
+}
+
+class SingleChat implements Callable<String> {
+	
+	private SingleRoom object;
+
 	private Socket socket;
 	private PrintWriter pr;
 	private BufferedReader br;
 	
-	EchoCallbackJ() {}
-	EchoCallbackJ(Socket socket) {
+	private SingleChat() {}
+	public SingleChat(Socket socket, SingleRoom object) {
 		this.socket = socket;
+		this.object = object;
+		System.out.println("creating...");
 		try {
-			this.pr = new PrintWriter(this.socket.getOutputStream());
 			this.br = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-		} catch (IOException e) {
-			e.printStackTrace();
+			this.pr = new PrintWriter(this.socket.getOutputStream());
+			this.object.addList(this);
+		} catch (Exception e) {
+			close();
 		}
+		System.out.println("SingleChat created");
 	}
 	
+	@Override
 	public String call() throws Exception {
-		System.out.println(Thread.currentThread().getName() + " start");
+		
+		String result = this.socket.getInetAddress().toString();
 		String line = "";
+		boolean interrupted = false;
+		
 		try {
-			
-			boolean interrupted = false;
 			while(!interrupted) {
 				if(this.br.ready()) {
 					line = this.br.readLine();
 					if(line.toUpperCase().equals("@EXIT")) {
 						break;
 					}
-					pr.println(line);
-					pr.flush();
+					object.broadcast(line);
+//					pr.println(line);
+//					pr.flush();
 				}
 				interrupted = Thread.interrupted();
 			}
-			stop();
-			System.out.println(Thread.currentThread().getName() + " stop");
-			
+			close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			close();
 		}
 		
-		return socket.getInetAddress().toString();
-	};
+		return result;
+	}
 	
-	private void stop() {
+	public void close() {
 		try {
+			object.removeList(this);
 			if(this.br != null) this.br.close();
 			if(this.pr != null) this.pr.close();
 			if(this.socket != null) this.socket.close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			//
 		}
 	}
+	
+	public void update(String msg) {
+		System.out.println("SingleChat - update()");
+		pr.println(msg);
+		pr.flush();
+	}
 }
-
-
-
 
 
