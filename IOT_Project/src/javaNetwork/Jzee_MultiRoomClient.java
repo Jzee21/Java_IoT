@@ -1,4 +1,4 @@
-package javaNetwork.jzee;
+package javaNetwork;
 
 import java.util.ArrayList;
 import java.util.List;
