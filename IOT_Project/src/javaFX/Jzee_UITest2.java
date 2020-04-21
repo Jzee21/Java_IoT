@@ -36,9 +36,13 @@ public class Jzee_UITest2 extends Application {
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		
+		// root
 		BorderPane root = new BorderPane();
 		root.setPrefSize(700, 500);
+		
+		// First
+		BorderPane first = new BorderPane();
+		first.setPrefSize(700, 500);
 		
 		GridPane center = new GridPane();
 		center.setPadding(new Insets(10));
@@ -55,6 +59,10 @@ public class Jzee_UITest2 extends Application {
 		
 		Button btn = new Button("Conn");
 		btn.setPrefSize(250, 30);
+		btn.setOnAction((e) -> {
+//			primaryStage.setScene(new Scene(root));
+		});
+		
 		HBox box = new HBox();
 		box.getChildren().add(btn);
 		box.setAlignment(Pos.CENTER_RIGHT);
@@ -64,13 +72,13 @@ public class Jzee_UITest2 extends Application {
 		center.add(box, 0, 1);
 		center.setColumnSpan(box, 2);
 		
-		root.setCenter(center);
+		first.setCenter(center);
 		
 		
 		
 		//
-		Scene firstScene = new Scene(root);
-		primaryStage.setScene(firstScene);
+		Scene scene = new Scene(first);
+		primaryStage.setScene(scene);
 		primaryStage.setTitle("Tester");
 		primaryStage.setOnCloseRequest((e) -> {
 			//
