@@ -1,8 +1,15 @@
 package javaNetwork;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -39,6 +46,13 @@ public class Jzee_MultiRoomClient extends Application{
 	private ListView<String> roomListView;
 	private ListView<String> participantsListView;		// 채팅방 참여목록
 	
+	private Socket socket;
+	private BufferedReader br;
+	private PrintWriter pr;
+//	private Thread receiver;
+	private ExecutorService receiverPool = Executors.newFixedThreadPool(1);
+	private ExecutorService senderPool = Executors.newFixedThreadPool(1);
+	
 	// displayText(String msg)
 	// displayText(TextArea ta, String msg)
 	public void displayText(String msg) {
@@ -58,6 +72,105 @@ public class Jzee_MultiRoomClient extends Application{
 		pane.setPrefSize(700, 40);
 		pane.setPadding(new Insets(5,5,5,5));
 		pane.setHgap(10);
+	}
+	
+	public void startClient() {
+		Runnable runnable = () -> {
+			try {
+				socket = new Socket();
+				socket.connect(new InetSocketAddress("70.12.60.91", 55566));
+				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				pr = new PrintWriter(socket.getOutputStream());
+				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
+			} catch (Exception e) {
+				if(!socket.isClosed()) { stopClient(); }
+				return;
+			}
+			receive();
+		};
+		receiverPool.submit(runnable);
+//		receiver = new Thread(() -> {
+//			try {
+//				socket = new Socket();
+//				socket.connect(new InetSocketAddress("70.12.60.91", 55566));
+//				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//				pr = new PrintWriter(socket.getOutputStream());
+//				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
+//			} catch (Exception e) {
+//				if(!socket.isClosed()) { stopClient(); }
+//				return;
+//			}
+//			receive();
+//		});
+//		receiver.start();
+	}
+	
+	public void stopClient() {
+//		try {
+//			receiver.interrupt();
+//			if(socket != null && socket.isClosed()) {
+//				br.close();
+//				pr.close();
+//				socket.close();
+//			}
+//			displayText("Server Disconnected");
+//		} catch (Exception e) {
+//			// do nothing
+//		}
+		System.out.println("called stopClient()");
+		try {
+			if(socket != null && !socket.isClosed()) {
+				System.out.println("in if");
+				br.close();
+				pr.close();
+				socket.close();
+			}
+			receiverPool.shutdownNow();
+			senderPool.shutdownNow();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		System.out.println("finish stopClient()");
+		System.out.println(socket.isClosed());
+	}
+	
+	public void receive() {
+		String message = "";
+		boolean interrupt = false;
+		try {
+			while(!interrupt) {
+				if(br.ready()) {
+					message = br.readLine();
+					displayText("receive : " + message);
+				}
+			}
+		} catch (IOException e) {
+			stopClient();
+		}
+	}
+	
+	public void send(String message) {
+		Runnable runnable = () -> {
+			try {
+				displayText("send() : " + message);
+				pr.println(message);
+				pr.flush();
+			} catch (Exception e) {
+				displayText("send Error");
+				stopClient();
+			}
+		};
+		senderPool.submit(runnable);
+//		new Thread(() -> {
+//			try {
+//				displayText("send() : " + message);
+//				pr.println(message);
+//				pr.flush();
+//			} catch (Exception e) {
+//				displayText("send Error");
+//				stopClient();
+//			}
+//		}).start();
 	}
 	
 	@Override
@@ -84,6 +197,7 @@ public class Jzee_MultiRoomClient extends Application{
 				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
 					int index = roomListView.getSelectionModel().getSelectedIndex();
 					root.setCenter(taList.get(index));
+					inputField.setEditable(true);
 				});
 		
 		// participantsList
@@ -119,6 +233,7 @@ public class Jzee_MultiRoomClient extends Application{
 		connBtn = new Button("Conn");
 		connBtn.setPrefSize(150, 40);
 		connBtn.setOnAction((e) -> {
+			startClient();
 			root.setBottom(menuPane);
 		});
 		
@@ -131,6 +246,7 @@ public class Jzee_MultiRoomClient extends Application{
 		createBtn.setPrefSize(150, 40);
 		createBtn.setOnAction((e) -> {
 			root.setBottom(inputPane);
+			inputField.setEditable(true);
 		});
 		
 		menuPane.getChildren().addAll(createBtn);
@@ -143,7 +259,13 @@ public class Jzee_MultiRoomClient extends Application{
 		});
 		
 		inputField = new TextField();
+		inputField.setEditable(false);
 		inputField.setPrefSize(500, 40);
+		inputField.setOnAction((e) -> {
+			send(inputField.getText());
+//			displayText(inputField.getText());
+			inputField.clear();
+		});
 		
 		inputPane.getChildren().addAll(menuBtn, inputField);
 		
@@ -155,6 +277,8 @@ public class Jzee_MultiRoomClient extends Application{
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
 			//
+			System.out.println("call stopClient()");
+			stopClient();
 		});
 		primaryStage.show();
 		
