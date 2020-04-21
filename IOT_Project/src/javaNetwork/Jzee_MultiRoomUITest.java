@@ -9,9 +9,11 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -24,14 +26,15 @@ import javafx.stage.Stage;
 public class Jzee_MultiRoomUITest extends Application{
 	
 	private String userID;
+	private String userNickname;
 	
 	private TextArea textarea;
 	
 	private List<TextArea> taList;
 	
-	private Button connBtn, disconnBtn;
-	private Button createRoomBtn;
-	private Button connBoomBtn;
+	private TextField nameField, inputField;
+	private Button connBtn, createBtn, menuBtn;
+	private Label nameLabel;
 	
 	private ListView<String> roomListView;
 	private ListView<String> participantsListView;		// 채팅방 참여목록
@@ -49,17 +52,19 @@ public class Jzee_MultiRoomUITest extends Application{
 		BorderPane root = new BorderPane();
 		root.setPrefSize(700, 500);
 		
-		// Center
+		// Center ----------------------------------------------
 		textarea = new TextArea();
 		textarea.setEditable(false);
 		root.setCenter(textarea);
 		
 		taList = new ArrayList<TextArea>();
-		taList.add(new TextArea("1"));
-		taList.add(new TextArea("2"));
-		taList.add(new TextArea("3"));
+//		taList.add(new TextArea("1"));
+//		taList.add(new TextArea("2"));
+//		taList.add(new TextArea("3"));
 		
-		// Right
+		
+		// Right -----------------------------------------------
+		// roomList
 		roomListView = new ListView<String>();
 		roomListView.getSelectionModel().selectedItemProperty().addListener(
 				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
@@ -67,9 +72,10 @@ public class Jzee_MultiRoomUITest extends Application{
 					root.setCenter(taList.get(index));
 				});
 		
-		
+		// participantsList
 		participantsListView = new ListView<String>();
 		
+		// Right GridPane
 		GridPane gridpane = new GridPane();
 		gridpane.setPadding(new Insets(5,5,5,5));
 		gridpane.setVgap(10);
@@ -78,98 +84,58 @@ public class Jzee_MultiRoomUITest extends Application{
 		
 		root.setRight(gridpane);
 		
-		// Bottom
+		// Bottom ----------------------------------------------
+		FlowPane namePane = new FlowPane();
+		FlowPane menuPane = new FlowPane();
+		FlowPane inputPane = new FlowPane();
+		setBottomPane(namePane);
+		setBottomPane(menuPane);
+		setBottomPane(inputPane);
+		
+		// namePane
+		nameLabel = new Label("Nickname");
+		nameLabel.setStyle("-fx-font-size: 15");
+		nameLabel.setPrefSize(150, 40);
+		nameLabel.setAlignment(Pos.CENTER);
+		
+		nameField = new TextField();
+		nameField.setPromptText("Please Enter Your Nickname");
+		nameField.setPrefSize(350, 40);
+		
 		connBtn = new Button("Conn");
 		connBtn.setPrefSize(150, 40);
 		connBtn.setOnAction((e) -> {
-			// Enter ID(Nickname) - Dialog
-			Dialog<String> dialog = new TextInputDialog("Please Enter Your Nickname");
-			dialog.setTitle("Chat Setting");
-			dialog.setHeaderText("Nickname Setting. Please Enter Your Nickname");
-			
-			Optional<String> result = dialog.showAndWait();
-			String entered = "";
-			if(result.isPresent()) {
-				// Nickname 입력, 확인버튼
-				entered = result.get();
-			}
-			
-			// Room List from Server
-			//
-			
-			// Set List
-			roomListView.getItems().add("서울, 경기 등산모임");
-			roomListView.getItems().add("기사시험 공부방");
-			roomListView.getItems().add("잉어킹");
-			printMsg("Chat Server Connected!");
-			printMsg("Welcome, " + entered + " !");
-			
+			root.setBottom(menuPane);
 		});
 		
-		disconnBtn = new Button("Disconn");
-		disconnBtn.setPrefSize(150, 40);
-		disconnBtn.setOnAction((e) -> {
-			
+		namePane.getChildren().addAll(nameLabel, nameField, connBtn);
+		namePane.setAlignment(Pos.CENTER);
+		root.setBottom(namePane);
+		
+		// menuPane
+		createBtn = new Button("Create Room");
+		createBtn.setPrefSize(150, 40);
+		createBtn.setOnAction((e) -> {
+			root.setBottom(inputPane);
 		});
 		
-		createRoomBtn = new Button();
-		createRoomBtn.setPrefSize(150,  40);
-		createRoomBtn.setOnAction((e) -> {
-			// New Chat Room
-			Dialog<String> dialog = new TextInputDialog("Please Enter Room Name");
-			dialog.setTitle("Room Setting");
-			dialog.setHeaderText("Room Setting. Please Enter Room Name");
-			
-			Optional<String> result = dialog.showAndWait();
-			String entered = "";
-			if(result.isPresent()) {
-				entered = result.get();
-			}
-			
-			roomListView.getItems().add(entered);
-			printMsg("Room " + entered + " is added");
-			
+		menuPane.getChildren().addAll(createBtn);
+		
+		// inputPane
+		menuBtn = new Button("Menu");
+		menuBtn.setPrefSize(150, 40);
+		menuBtn.setOnAction((e) -> {
+			root.setBottom(menuPane);
 		});
 		
-		connBoomBtn = new Button("Room Connect");
-		connBoomBtn.setPrefSize(150,  40);
-		connBoomBtn.setOnAction((e) -> {
-			// Open Stream
-			String roomName = roomListView.getSelectionModel().getSelectedItem();
-			// server conn
-			
-			// participants
-			participantsListView.getItems().add("");
-			participantsListView.getItems().add("");
-			participantsListView.getItems().add("");
-			
-			//
-			printMsg("Enter Room " + roomName);
-			
-			// 화면 하단 레이아웃 전환
-			FlowPane inputFlowPane = new FlowPane();
-			inputFlowPane.setPrefSize(700, 40);
-			inputFlowPane.setPadding(new Insets(5,5,5,5));
-			inputFlowPane.setHgap(10);
-			
-			TextField inputTF = new TextField();
-			inputTF.setPrefSize(500, 40);
-			
-			inputFlowPane.getChildren().addAll(inputTF);
-			
-			root.setBottom(inputFlowPane);
-			
-		});
+		inputField = new TextField();
+		inputField.setPrefSize(500, 40);
 		
-		FlowPane menuFlowPane = new FlowPane();
-		menuFlowPane.setPrefSize(700, 40);
-		menuFlowPane.setPadding(new Insets(5,5,5,5));
-		menuFlowPane.setHgap(10);
-		menuFlowPane.getChildren().addAll(connBtn, disconnBtn, connBoomBtn);
-		root.setBottom(menuFlowPane);
+		inputPane.getChildren().addAll(menuBtn, inputField);
 		
 		
-		//
+		
+		// Scene ------------------------------------------------
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Multi Room Chat Client");
@@ -180,8 +146,17 @@ public class Jzee_MultiRoomUITest extends Application{
 		
 	} // start(Stage primaryStage)
 
+	// main
 	public static void main(String[] args) {
 		launch();
+	}
+	
+	// method
+	// setBottomPane(FlowPane pane)
+	private void setBottomPane (FlowPane pane) {
+		pane.setPrefSize(700, 40);
+		pane.setPadding(new Insets(5,5,5,5));
+		pane.setHgap(10);
 	}
 
 }
