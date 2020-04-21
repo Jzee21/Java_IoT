@@ -40,7 +40,7 @@ public class Jzee_MultiRoomClient extends Application{
 	private List<TextArea> taList;
 	
 	private TextField nameField, inputField;
-	private Button connBtn, createBtn, menuBtn;
+	private Button connBtn, disconnBtn, createBtn, menuBtn;
 	private Label nameLabel;
 	
 	private ListView<String> roomListView;
@@ -53,32 +53,12 @@ public class Jzee_MultiRoomClient extends Application{
 	private ExecutorService receiverPool = Executors.newFixedThreadPool(1);
 	private ExecutorService senderPool = Executors.newFixedThreadPool(1);
 	
-	// displayText(String msg)
-	// displayText(TextArea ta, String msg)
-	public void displayText(String msg) {
-		Platform.runLater(() -> {
-			textarea.appendText(msg + "\n");
-		});
-	}
-	
-	public void displayText(TextArea ta, String msg) {
-		Platform.runLater(() -> {
-			ta.appendText(msg + "\n");
-		});
-	}
-	
-	// setBottomPane(FlowPane pane)
-	private void setBottomPane (FlowPane pane) {
-		pane.setPrefSize(700, 40);
-		pane.setPadding(new Insets(5,5,5,5));
-		pane.setHgap(10);
-	}
-	
+	//
 	public void startClient() {
 		Runnable runnable = () -> {
 			try {
 				socket = new Socket();
-				socket.connect(new InetSocketAddress("70.12.60.91", 55566));
+				socket.connect(new InetSocketAddress("localhost", 55566));
 				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				pr = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
@@ -131,7 +111,7 @@ public class Jzee_MultiRoomClient extends Application{
 			// TODO: handle exception
 		}
 		System.out.println("finish stopClient()");
-		System.out.println(socket.isClosed());
+		System.out.println("socket.isClosed() : " + socket.isClosed());
 	}
 	
 	public void receive() {
@@ -141,7 +121,7 @@ public class Jzee_MultiRoomClient extends Application{
 			while(!interrupt) {
 				if(br.ready()) {
 					message = br.readLine();
-					displayText("receive : " + message);
+//					displayText("receive : " + message);
 				}
 			}
 		} catch (IOException e) {
@@ -152,7 +132,7 @@ public class Jzee_MultiRoomClient extends Application{
 	public void send(String message) {
 		Runnable runnable = () -> {
 			try {
-				displayText("send() : " + message);
+//				displayText("send() : " + message);
 				pr.println(message);
 				pr.flush();
 			} catch (Exception e) {
@@ -171,6 +151,27 @@ public class Jzee_MultiRoomClient extends Application{
 //				stopClient();
 //			}
 //		}).start();
+	}
+	
+	// displayText(String msg)
+	// displayText(TextArea ta, String msg)
+	public void displayText(String msg) {
+		Platform.runLater(() -> {
+			textarea.appendText(msg + "\n");
+		});
+	}
+	
+	public void displayText(TextArea ta, String msg) {
+		Platform.runLater(() -> {
+			ta.appendText(msg + "\n");
+		});
+	}
+	
+	// setBottomPane(FlowPane pane)
+	private void setBottomPane (FlowPane pane) {
+		pane.setPrefSize(700, 40);
+		pane.setPadding(new Insets(5,5,5,5));
+		pane.setHgap(10);
 	}
 	
 	@Override
@@ -242,6 +243,13 @@ public class Jzee_MultiRoomClient extends Application{
 		root.setBottom(namePane);
 		
 		// menuPane
+		disconnBtn = new Button("Disconn");
+		disconnBtn.setPrefSize(150, 40);
+		disconnBtn.setOnAction((e) -> {
+			stopClient();
+			root.setBottom(namePane);
+		});
+		
 		createBtn = new Button("Create Room");
 		createBtn.setPrefSize(150, 40);
 		createBtn.setOnAction((e) -> {
@@ -249,7 +257,7 @@ public class Jzee_MultiRoomClient extends Application{
 			inputField.setEditable(true);
 		});
 		
-		menuPane.getChildren().addAll(createBtn);
+		menuPane.getChildren().addAll(disconnBtn, createBtn);
 		
 		// inputPane
 		menuBtn = new Button("Menu");

@@ -29,7 +29,7 @@ public class Jzee_MultiRoomServer extends Application{
 	private TextArea textarea;
 	private Button startBtn, stopBtn;
 	
-	private ExecutorService executor = Executors.newCachedThreadPool();
+	private ExecutorService executor; // = Executors.newCachedThreadPool();
 	private ServerSocket server;
 	
 	private Map<Integer, Room> roomlist = new ConcurrentHashMap<Integer, Room>();
@@ -69,7 +69,9 @@ public class Jzee_MultiRoomServer extends Application{
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
-					connections.put(client.hashCode(), client);
+//					displayText("client.hashCode() " + client.hashCode());
+//					displayText("client.userID " + client.userID);
+					connections.put(client.userID, client);
 				} catch (SocketTimeoutException e) {					
 //						displayText("" + Thread.interrupted());
 					if(Thread.interrupted()) {
@@ -199,7 +201,7 @@ public class Jzee_MultiRoomServer extends Application{
 							message = input.readLine();
 							displayText("receive : " + message);
 							if(message == null) {
-								throw new IOException();
+								throw new IOException("Client Closed");
 							}
 							for(Integer key : connections.keySet()) {
 								Client client = connections.get(key);
@@ -213,10 +215,10 @@ public class Jzee_MultiRoomServer extends Application{
 //					}
 					
 				} catch (IOException e) {
-					displayText("InputStream Create Error");
+					displayText(e.toString());
 					try {
 						socket.close();
-						connections.remove(Client.this);
+						connections.remove(Client.this.userID);
 					} catch (IOException e1) {
 						// do nothing
 					}
@@ -229,7 +231,7 @@ public class Jzee_MultiRoomServer extends Application{
 			Runnable runnable = () -> {
 				try {
 					PrintWriter output = new PrintWriter(socket.getOutputStream());
-					displayText("send() : " + message);
+//					displayText("send() : " + message);
 					output.println(message);
 					output.flush();
 				} catch (Exception e) {
