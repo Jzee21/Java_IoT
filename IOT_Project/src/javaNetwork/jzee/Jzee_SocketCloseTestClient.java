@@ -81,7 +81,17 @@ public class Jzee_SocketCloseTestClient extends Application {
 		disconnBtn.setPrefSize(150, 50);
 		disconnBtn.setOnAction((e) -> {
 			printMsg("disconn clicked");
-			executor.shutdownNow();
+//			executor.shutdownNow();
+			try {
+				if(socket != null && socket.isClosed())
+					socket.close();
+				if(executor != null && executor.isShutdown())
+					executor.shutdownNow();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 			printMsg("socket : " + socket);
 			printMsg("socket isConn : " + socket.isConnected());
 			printMsg("socket isClose : " + socket.isClosed());
@@ -141,30 +151,48 @@ public class Jzee_SocketCloseTestClient extends Application {
 				while(!interrupt) {
 					if(br.ready()) {
 						msg = br.readLine();
-						if(msg == null)	break;
+						if(msg == null)	{
+							printMsg("if null");
+							stopClient();
+//							break;
+						}
+						if(msg == "-1")	{
+							printMsg("if -1");
+							stopClient();
+//							break;
+						}
 						printMsg(msg);
 					}
 					interrupt = Thread.interrupted();
 				}
 			} catch (Exception e) {
-				// TODO: handle exception
-			} finally {
-				try {
-					printMsg("finally");
-					pr.println("@EXIT");
-					pr.flush();
-					pr.close();
-					br.close();
-					socket.close();
-					printMsg("close socket : " + socket);
-					printMsg("socket isConn : " + socket.isConnected());
-					printMsg("socket isClose : " + socket.isClosed());
-					
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				printMsg("catch");
+				stopClient();
 			}
+			printMsg("after try");
+			stopClient();
+//			try {
+//				printMsg("null - break");
+//				pr.close();
+//				br.close();
+//				socket.close();
+//				executor.shutdownNow();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+		}
+	}
+	
+	void stopClient() {
+		try {
+			printMsg("stopClient(");
+			pr.close();
+			br.close();
+			socket.close();
+			executor.shutdownNow();
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
 	}
 	
