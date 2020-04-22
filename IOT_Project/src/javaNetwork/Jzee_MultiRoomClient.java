@@ -34,8 +34,8 @@ import javafx.stage.Stage;
 
 public class Jzee_MultiRoomClient extends Application{
 	
-	private String userID;
-	private String userNickname;
+	private int userID = 123456;
+	private String nickname;
 	
 	private BorderPane root;
 	private FlowPane namePane, menuPane, inputPane;
@@ -108,8 +108,10 @@ public class Jzee_MultiRoomClient extends Application{
 		roomListView.getSelectionModel().selectedItemProperty().addListener(
 				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
 					int index = roomListView.getSelectionModel().getSelectedIndex();
-					root.setCenter(taList.get(index));
-					inputField.setEditable(true);
+					Platform.runLater(() -> {
+						root.setCenter(taList.get(index));
+						inputField.setEditable(true);
+					});
 				});
 		
 		// participantsList
@@ -144,7 +146,9 @@ public class Jzee_MultiRoomClient extends Application{
 		connBtn.setPrefSize(150, 40);
 		connBtn.setOnAction((e) -> {
 			startClient();
-			root.setBottom(menuPane);
+			Platform.runLater(() -> {
+				root.setBottom(menuPane);
+			});
 		});
 		
 		setBottomPane(namePane);
@@ -157,14 +161,18 @@ public class Jzee_MultiRoomClient extends Application{
 		disconnBtn.setPrefSize(150, 40);
 		disconnBtn.setOnAction((e) -> {
 			stopClient();
-			root.setBottom(namePane);
+			Platform.runLater(() -> {
+				root.setBottom(namePane);
+			});
 		});
 		
 		createBtn = new Button("Create Room");
 		createBtn.setPrefSize(150, 40);
 		createBtn.setOnAction((e) -> {
-			root.setBottom(inputPane);
-			inputField.setEditable(true);
+			Platform.runLater(() -> {
+				root.setBottom(inputPane);
+				inputField.setEditable(true);
+			});
 		});
 		
 		setBottomPane(menuPane);
@@ -174,7 +182,9 @@ public class Jzee_MultiRoomClient extends Application{
 		menuBtn = new Button("Menu");
 		menuBtn.setPrefSize(150, 40);
 		menuBtn.setOnAction((e) -> {
-			root.setBottom(menuPane);
+			Platform.runLater(() -> {
+				root.setBottom(menuPane);
+			});
 		});
 		
 		inputField = new TextField();
@@ -182,9 +192,10 @@ public class Jzee_MultiRoomClient extends Application{
 		inputField.setPrefSize(500, 40);
 		inputField.setOnAction((e) -> {
 			send(inputField.getText());
-			
 //			displayText(inputField.getText());
-			inputField.clear();
+			Platform.runLater(() -> {
+				inputField.clear();
+			});
 		});
 		
 		setBottomPane(inputPane);
@@ -208,7 +219,7 @@ public class Jzee_MultiRoomClient extends Application{
 	// main
 	public static void main(String[] args) {
 		launch();
-	}
+	} // main
 	
 	
 	// =================================================================
@@ -233,7 +244,7 @@ public class Jzee_MultiRoomClient extends Application{
 			receive();
 		};
 		receiverPool.submit(runnable);
-	}
+	} // startClient()
 	
 	public void stopClient() {
 		try {
@@ -243,8 +254,10 @@ public class Jzee_MultiRoomClient extends Application{
 				if(output != null) output.close();
 				displayText("[ Disconnected ]");
 			}
-			receiverPool.shutdownNow();
-			senderPool.shutdownNow();
+			if(receiverPool != null && receiverPool.isShutdown())
+				receiverPool.shutdownNow();
+			if(senderPool != null && senderPool.isShutdown())
+				senderPool.shutdownNow();
 		} catch (Exception e) {
 			displayText("[ Disconnection Error ]");
 			e.printStackTrace();
@@ -255,7 +268,7 @@ public class Jzee_MultiRoomClient extends Application{
 				root.setBottom(namePane);
 			});
 		} // try
-	}
+	} // stopClient()
 	
 	// ---------------------------------------------------
 	public void receive() {
@@ -271,23 +284,27 @@ public class Jzee_MultiRoomClient extends Application{
 		} catch (IOException e) {
 			stopClient();
 		}
-	}
+	} // receive()
 	
 	public void send(String message) {
-		Runnable runnable = () -> {
-			try {
-//				displayText("send() : " + message);
-				String json = gson.toJson(new Message(message));
-				output.println(json);
-//				output.println(message);
-				output.flush();
-			} catch (Exception e) {
-				displayText("send Error");
-				stopClient();
-			}
-		};
-		senderPool.submit(runnable);
-	}
+		
+		if(message != null && !message.equals(""))
+			send(new Message(0x000101, userID, message));
+		
+//		Runnable runnable = () -> {
+//			try {
+////				displayText("send() : " + message);
+//				String json = gson.toJson(new Message(message));
+//				output.println(json);
+////				output.println(message);
+//				output.flush();
+//			} catch (Exception e) {
+//				displayText("send Error");
+//				stopClient();
+//			}
+//		};
+//		senderPool.submit(runnable);
+	} // send(String message)
 	
 	public void send(Message message) {
 		Runnable runnable = () -> {
@@ -301,7 +318,7 @@ public class Jzee_MultiRoomClient extends Application{
 			}
 		};
 		senderPool.submit(runnable);
-	}
+	} // send(Message message)
 	
 
 	
@@ -371,6 +388,6 @@ public class Jzee_MultiRoomClient extends Application{
 					+ "]";
 		}
 		
-	}
+	} // class Message
 	
 }

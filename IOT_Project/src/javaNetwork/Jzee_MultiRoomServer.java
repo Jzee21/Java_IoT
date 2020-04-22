@@ -69,13 +69,13 @@ public class Jzee_MultiRoomServer extends Application{
 		stopBtn = new Button("Server Stop");
 		stopBtn.setPrefSize(200, 40);
 		stopBtn.setOnAction((event) -> {
-//			stopServer();
-			try {
-				server.close();
-				executor.shutdownNow();
-			} catch (IOException e1) {
-//				e1.printStackTrace();
-			}
+			stopServer();
+//			try {
+//				server.close();
+//				executor.shutdownNow();
+//			} catch (IOException e1) {
+////				e1.printStackTrace();
+//			}
 		});
 		
 		FlowPane bottom = new FlowPane();
@@ -109,7 +109,9 @@ public class Jzee_MultiRoomServer extends Application{
 	public void startServer() {
 		
 		executor = Executors.newCachedThreadPool();
-		startBtn.setDisable(true);
+		Platform.runLater(() -> {
+			startBtn.setDisable(true);
+		});
 		
 		// ServerSocket
 		try {
@@ -145,8 +147,9 @@ public class Jzee_MultiRoomServer extends Application{
 			stopServer();
 		}; // runnable
 		executor.submit(runnable);
-		
-		stopBtn.setDisable(false);
+		Platform.runLater(() -> {
+			stopBtn.setDisable(false);
+		});
 		
 	} // startServer() 
 	
@@ -166,9 +169,12 @@ public class Jzee_MultiRoomServer extends Application{
 			displayText("##### Server Stoped #####");
 		} catch (Exception e) {
 			// do nothing
-		} // try
-		startBtn.setDisable(false);
-		stopBtn.setDisable(true);
+		} finally {
+			Platform.runLater(() -> {
+				startBtn.setDisable(false);
+				stopBtn.setDisable(true);
+			});
+		}// try
 	} // stopServer()
 	
 	
@@ -222,16 +228,24 @@ public class Jzee_MultiRoomServer extends Application{
 					try {
 						message = input.readLine();
 //						displayText("receive : " + message);
+						displayText("test1 : " + message);				// null?
 						Message msg = gson.fromJson(message, Message.class);
-						displayText("[receive] " + msg.toString());
+						displayText("test2 : " + message);				// null
+						displayText("test2 : " + msg);					// null						
+						displayText("[receive] " + msg.toString());		// error : message=null
+						displayText("test3 : " + message);
 						if(message == null) {
+							displayText("in if : " + message);
 							throw new IOException("Client Closed");
 						}
+						displayText("out if : " + message);
 						for(Integer key : connections.keySet()) {
 							Client client = connections.get(key);
 							client.send(message);
 						}
+						displayText("out for : " + message);
 					} catch (IOException e) {
+						displayText("catch : " + message);
 						displayText("socket closed at [" + socket.getInetAddress() + "]");
 //						e.printStackTrace();
 						this.closeSocket();
