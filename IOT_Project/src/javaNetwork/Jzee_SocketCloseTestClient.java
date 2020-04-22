@@ -75,22 +75,15 @@ public class Jzee_SocketCloseTestClient extends Application{
 	}
 	
 	public void stopClient() {
-		System.out.println("stopClient() start");
 		try {
 			if(socket != null && !socket.isClosed()) {
-				System.out.println("in if");
 				socket.close();
-				System.out.println("socket pass");
 				if(input != null) input.close();
-				System.out.println("input pass");
 				if(output != null) output.close();
-				System.out.println("output pass");
 			}
-			System.out.println("out if");
 			receiverPool.shutdownNow();
 			senderPool.shutdownNow();
 		} catch (Exception e) {
-			// TODO: handle exception
 			e.printStackTrace();
 		}
 		if(socket != null)
@@ -102,7 +95,7 @@ public class Jzee_SocketCloseTestClient extends Application{
 	public void receive() {
 		String message = "";
 		boolean interrupt = false;
-		try (BufferedReader input = this.input;) {
+		try {
 			while(true) {
 				// no ready()
 				displayText("waiting readLine()");
@@ -124,7 +117,6 @@ public class Jzee_SocketCloseTestClient extends Application{
 //				interrupt = Thread.interrupted();
 //			}
 		} catch (IOException e) {
-			System.out.println("readLine - null catch?");
 			stopClient();
 		}
 	}

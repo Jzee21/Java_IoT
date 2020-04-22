@@ -142,6 +142,8 @@ public class Jzee_MultiRoomServer extends Application{
 		}; // runnable
 		executor.submit(runnable);
 		
+		stopBtn.setDisable(false);
+		
 	} // startServer() 
 	
 	public void stopServer() {
@@ -162,6 +164,7 @@ public class Jzee_MultiRoomServer extends Application{
 			// do nothing
 		} // try
 		startBtn.setDisable(false);
+		stopBtn.setDisable(true);
 	} // stopServer()
 	
 	
@@ -178,37 +181,43 @@ public class Jzee_MultiRoomServer extends Application{
 			this.socket = socket;
 			this.userID = this.hashCode();
 			connections.put(userID, this);
-//			socket.setKeepAlive(true);
 			receive();
 		}
 		
 		void closeSocket() {
-			String msg = socket.getInetAddress().toString();
+			String addr = socket.getInetAddress().toString();
+			displayText("[" + addr + "] cleaning...");
 			try {
 				if(socket != null && !socket.isClosed()) {
+					socket.close();
 					input.close();
 					output.close();
-					socket.close();
 				}
 				connections.remove(Client.this.userID);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			displayText(msg + " is closed");
+			} // try
+			displayText("[" + addr + "] cleaned");
 		}
 		
 		// method
 		void receive() {
 			Runnable runnable = () -> {
+				String message = "";
+				
 				try {
 					input = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-					String message = "";
-					boolean interrupt = false;
+					output = new PrintWriter(socket.getOutputStream());
+				} catch (IOException e) {
+					displayText("Stream Create Error");
+//					e.printStackTrace();
+					this.closeSocket();
+				} // try
 					
-					while(true) {
+				while(true) {
+					try {
 						message = input.readLine();
-						displayText("receive : " + message);
+//						displayText("receive : " + message);
 						if(message == null) {
 							throw new IOException("Client Closed");
 						}
@@ -216,33 +225,14 @@ public class Jzee_MultiRoomServer extends Application{
 							Client client = connections.get(key);
 							client.send(message);
 						}
-					} // while
+					} catch (IOException e) {
+						displayText("socket closed at [" + socket.getInetAddress() + "]");
+//						e.printStackTrace();
+						this.closeSocket();
+						break;
+					} // try
+				} // while
 					
-//					while(!interrupt) {
-//						if(input.ready()) {
-//							message = input.readLine();
-//							displayText("receive : " + message);
-//							if(message == null) {
-//								throw new IOException("Client Closed");
-//							}
-//							for(Integer key : connections.keySet()) {
-//								Client client = connections.get(key);
-//								client.send(message);
-//							}
-//						}
-//						interrupt = Thread.interrupted();
-//					} // while
-					
-				} catch (IOException e) {
-					displayText(e.toString());
-					this.closeSocket();
-//					try {
-//						socket.close();
-//						connections.remove(Client.this.userID);
-//					} catch (IOException e1) {
-//						// do nothing
-//					}
-				} // try
 			}; // runnable
 			executor.submit(runnable);
 		} // receive()
@@ -250,18 +240,12 @@ public class Jzee_MultiRoomServer extends Application{
 		void send(String message) {
 			Runnable runnable = () -> {
 				try {
-					output = new PrintWriter(socket.getOutputStream());
 //					displayText("send() : " + message);
 					output.println(message);
 					output.flush();
 				} catch (Exception e) {
 					displayText("OutputStream Create Error");
-					try {
-						socket.close();
-						connections.remove(Client.this.userID);
-					} catch (IOException e1) {
-						// do nothing
-					}
+					this.closeSocket();
 				} // try
 			}; // runnable
 			executor.submit(runnable);

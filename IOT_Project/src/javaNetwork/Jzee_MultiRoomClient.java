@@ -50,11 +50,17 @@ public class Jzee_MultiRoomClient extends Application{
 	private BufferedReader input;
 	private PrintWriter output;
 //	private Thread receiver;
-	private ExecutorService receiverPool = Executors.newFixedThreadPool(1);
-	private ExecutorService senderPool = Executors.newFixedThreadPool(1);
+	private ExecutorService receiverPool;
+	private ExecutorService senderPool;
 	
 	//
 	public void startClient() {
+		
+		connBtn.setDisable(true);
+		disconnBtn.setDisable(false);
+		receiverPool = Executors.newFixedThreadPool(1);
+		senderPool = Executors.newFixedThreadPool(1);
+		
 		Runnable runnable = () -> {
 			try {
 				socket = new Socket();
@@ -72,32 +78,32 @@ public class Jzee_MultiRoomClient extends Application{
 	}
 	
 	public void stopClient() {
-		System.out.println("stopClient() start");
 		try {
 			if(socket != null && !socket.isClosed()) {
-				System.out.println("in if");
-				input.close();
-				output.close();
 				socket.close();
+				if(input != null) input.close();
+				if(output != null) output.close();
+				displayText("[ Disconnected ]");
 			}
 			receiverPool.shutdownNow();
 			senderPool.shutdownNow();
 		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		if(socket != null)
-			System.out.println("socket.isClosed() : " + socket.isClosed());
-		System.out.println("stopClient() end");
+			displayText("[ Disconnection Error ]");
+			e.printStackTrace();
+		} finally {
+			connBtn.setDisable(false);
+			disconnBtn.setDisable(true);
+		} // try
 	}
 	
 	public void receive() {
 		String message = "";
-		boolean interrupt = false;
 		try {
-			while(!interrupt) {
-				if(input.ready()) {
-					message = input.readLine();
-//					displayText("receive : " + message);
+			while(true) {
+				message = input.readLine();
+				if(message == null) {
+					// Server's socket closed
+					throw new IOException();
 				}
 			}
 		} catch (IOException e) {
@@ -183,9 +189,7 @@ public class Jzee_MultiRoomClient extends Application{
 		FlowPane namePane = new FlowPane();
 		FlowPane menuPane = new FlowPane();
 		FlowPane inputPane = new FlowPane();
-		setBottomPane(namePane);
-		setBottomPane(menuPane);
-		setBottomPane(inputPane);
+		
 		
 		// namePane
 		nameLabel = new Label("Nickname");
@@ -204,6 +208,7 @@ public class Jzee_MultiRoomClient extends Application{
 			root.setBottom(menuPane);
 		});
 		
+		setBottomPane(namePane);
 		namePane.getChildren().addAll(nameLabel, nameField, connBtn);
 		namePane.setAlignment(Pos.CENTER);
 		root.setBottom(namePane);
@@ -223,6 +228,7 @@ public class Jzee_MultiRoomClient extends Application{
 			inputField.setEditable(true);
 		});
 		
+		setBottomPane(menuPane);
 		menuPane.getChildren().addAll(disconnBtn, createBtn);
 		
 		// inputPane
@@ -241,6 +247,7 @@ public class Jzee_MultiRoomClient extends Application{
 			inputField.clear();
 		});
 		
+		setBottomPane(inputPane);
 		inputPane.getChildren().addAll(menuBtn, inputField);
 		
 		
@@ -250,8 +257,6 @@ public class Jzee_MultiRoomClient extends Application{
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
-			//
-			System.out.println("call stopClient()");
 			stopClient();
 		});
 		primaryStage.show();
