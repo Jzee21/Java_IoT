@@ -185,6 +185,7 @@ public class Jzee_MultiRoomServer extends Application{
 			this.socket = socket;
 			this.userID = this.hashCode();
 			connections.put(userID, this);
+//			socket.setKeepAlive(true);
 			receive();
 		}
 		
