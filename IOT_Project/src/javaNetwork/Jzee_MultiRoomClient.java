@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.google.gson.Gson;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -35,6 +37,9 @@ public class Jzee_MultiRoomClient extends Application{
 	private String userID;
 	private String userNickname;
 	
+	private BorderPane root;
+	private FlowPane namePane, menuPane, inputPane;
+	
 	private TextArea textarea;
 	
 	private List<TextArea> taList;
@@ -53,78 +58,10 @@ public class Jzee_MultiRoomClient extends Application{
 	private ExecutorService receiverPool;
 	private ExecutorService senderPool;
 	
-	//
-	public void startClient() {
-		
-		connBtn.setDisable(true);
-		disconnBtn.setDisable(false);
-		receiverPool = Executors.newFixedThreadPool(1);
-		senderPool = Executors.newFixedThreadPool(1);
-		
-		Runnable runnable = () -> {
-			try {
-				socket = new Socket();
-				socket.connect(new InetSocketAddress("localhost", 55566));
-				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				output = new PrintWriter(socket.getOutputStream());
-				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
-			} catch (Exception e) {
-				if(!socket.isClosed()) { stopClient(); }
-				return;
-			}
-			receive();
-		};
-		receiverPool.submit(runnable);
-	}
+	private Gson gson = new Gson();
 	
-	public void stopClient() {
-		try {
-			if(socket != null && !socket.isClosed()) {
-				socket.close();
-				if(input != null) input.close();
-				if(output != null) output.close();
-				displayText("[ Disconnected ]");
-			}
-			receiverPool.shutdownNow();
-			senderPool.shutdownNow();
-		} catch (Exception e) {
-			displayText("[ Disconnection Error ]");
-			e.printStackTrace();
-		} finally {
-			connBtn.setDisable(false);
-			disconnBtn.setDisable(true);
-		} // try
-	}
 	
-	public void receive() {
-		String message = "";
-		try {
-			while(true) {
-				message = input.readLine();
-				if(message == null) {
-					// Server's socket closed
-					throw new IOException();
-				}
-			}
-		} catch (IOException e) {
-			stopClient();
-		}
-	}
-	
-	public void send(String message) {
-		Runnable runnable = () -> {
-			try {
-//				displayText("send() : " + message);
-				output.println(message);
-				output.flush();
-			} catch (Exception e) {
-				displayText("send Error");
-				stopClient();
-			}
-		};
-		senderPool.submit(runnable);
-	}
-	
+	// =================================================================
 	// displayText(String msg)
 	// displayText(TextArea ta, String msg)
 	public void displayText(String msg) {
@@ -146,10 +83,12 @@ public class Jzee_MultiRoomClient extends Application{
 		pane.setHgap(10);
 	}
 	
+	
+	// =================================================================
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		
-		BorderPane root = new BorderPane();
+		root = new BorderPane();
 		root.setPrefSize(700, 500);
 		
 		// Center ----------------------------------------------
@@ -186,9 +125,9 @@ public class Jzee_MultiRoomClient extends Application{
 		root.setRight(gridpane);
 		
 		// Bottom ----------------------------------------------
-		FlowPane namePane = new FlowPane();
-		FlowPane menuPane = new FlowPane();
-		FlowPane inputPane = new FlowPane();
+		namePane = new FlowPane();
+		menuPane = new FlowPane();
+		inputPane = new FlowPane();
 		
 		
 		// namePane
@@ -263,9 +202,168 @@ public class Jzee_MultiRoomClient extends Application{
 		
 	} // start(Stage primaryStage)
 
+	
+	// =================================================================
 	// main
 	public static void main(String[] args) {
 		launch();
 	}
+	
+	
+	// =================================================================
+	public void startClient() {
+		
+		connBtn.setDisable(true);
+		disconnBtn.setDisable(false);
+		receiverPool = Executors.newFixedThreadPool(1);
+		senderPool = Executors.newFixedThreadPool(1);
+		
+		Runnable runnable = () -> {
+			try {
+				socket = new Socket();
+				socket.connect(new InetSocketAddress("localhost", 55566));
+				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				output = new PrintWriter(socket.getOutputStream());
+				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
+			} catch (Exception e) {
+				if(!socket.isClosed()) { stopClient(); }
+				return;
+			}
+			receive();
+		};
+		receiverPool.submit(runnable);
+	}
+	
+	public void stopClient() {
+		try {
+			if(socket != null && !socket.isClosed()) {
+				socket.close();
+				if(input != null) input.close();
+				if(output != null) output.close();
+				displayText("[ Disconnected ]");
+			}
+			receiverPool.shutdownNow();
+			senderPool.shutdownNow();
+		} catch (Exception e) {
+			displayText("[ Disconnection Error ]");
+			e.printStackTrace();
+		} finally {
+			Platform.runLater(() -> {
+				connBtn.setDisable(false);
+				disconnBtn.setDisable(true);
+				root.setBottom(namePane);
+			});
+		} // try
+	}
+	
+	// ---------------------------------------------------
+	public void receive() {
+		String message = "";
+		try {
+			while(true) {
+				message = input.readLine();
+				if(message == null) {
+					// Server's socket closed
+					throw new IOException();
+				}
+			}
+		} catch (IOException e) {
+			stopClient();
+		}
+	}
+	
+	public void send(String message) {
+		Runnable runnable = () -> {
+			try {
+//				displayText("send() : " + message);
+				String json = gson.toJson(new Message(message));
+				output.println(json);
+//				output.println(message);
+				output.flush();
+			} catch (Exception e) {
+				displayText("send Error");
+				stopClient();
+			}
+		};
+		senderPool.submit(runnable);
+	}
+	
+	public void send(Message message) {
+		Runnable runnable = () -> {
+			try {
+				String jsonMsg = gson.toJson(message);
+				output.println(jsonMsg);
+				output.flush();
+			} catch (Exception e) {
+				displayText("send Error");
+				stopClient();
+			}
+		};
+		senderPool.submit(runnable);
+	}
+	
 
+	
+	// =================================================================
+	class Message {
+		private int code;
+		private int userID;
+		private int targetID;
+		private String jsonData;
+		
+		public Message(String jsonData) {
+			this.jsonData = jsonData;
+		}
+		
+		public Message(int code, int userID, int targetID) {
+			this.code = code;
+			this.userID = userID;
+			this.targetID = targetID;
+		}
+		
+		public Message(int code, int userID, String jsonData) {
+			this.code = code;
+			this.userID = userID;
+			this.jsonData = jsonData;
+		}
+		
+		public Message(int code, int userID, int targetID, String jsonData) {
+			this(code, userID, targetID);
+			this.jsonData = jsonData;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public void setCode(int code) {
+			this.code = code;
+		}
+
+		public int getUserID() {
+			return userID;
+		}
+
+		public void setUserID(int userID) {
+			this.userID = userID;
+		}
+
+		public int getTargetID() {
+			return targetID;
+		}
+
+		public void setTargetID(int targetID) {
+			this.targetID = targetID;
+		}
+
+		public String getJsonData() {
+			return jsonData;
+		}
+
+		public void setJsonData(String jsonData) {
+			this.jsonData = jsonData;
+		}
+		
+	}
+	
 }
