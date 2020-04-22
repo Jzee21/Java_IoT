@@ -217,7 +217,7 @@ public class Jzee_MultiRoomServer extends Application{
 				while(true) {
 					try {
 						message = input.readLine();
-//						displayText("receive : " + message);
+						displayText("receive : " + message);
 						if(message == null) {
 							throw new IOException("Client Closed");
 						}
@@ -266,5 +266,68 @@ public class Jzee_MultiRoomServer extends Application{
 		}
 		
 	}
+	
+	
+	// =================================================================
+		class Message {
+			private int code;
+			private int userID;
+			private int targetID;
+			private String jsonData;
+			
+			public Message(String jsonData) {
+				this.jsonData = jsonData;
+			}
+			
+			public Message(int code, int userID, int targetID) {
+				this.code = code;
+				this.userID = userID;
+				this.targetID = targetID;
+			}
+			
+			public Message(int code, int userID, String jsonData) {
+				this.code = code;
+				this.userID = userID;
+				this.jsonData = jsonData;
+			}
+			
+			public Message(int code, int userID, int targetID, String jsonData) {
+				this(code, userID, targetID);
+				this.jsonData = jsonData;
+			}
+
+			public int getCode() {
+				return code;
+			}
+
+			public void setCode(int code) {
+				this.code = code;
+			}
+
+			public int getUserID() {
+				return userID;
+			}
+
+			public void setUserID(int userID) {
+				this.userID = userID;
+			}
+
+			public int getTargetID() {
+				return targetID;
+			}
+
+			public void setTargetID(int targetID) {
+				this.targetID = targetID;
+			}
+
+			public String getJsonData() {
+				return jsonData;
+			}
+
+			public void setJsonData(String jsonData) {
+				this.jsonData = jsonData;
+			}
+			
+		}
 
 }
