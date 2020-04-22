@@ -227,25 +227,20 @@ public class Jzee_MultiRoomServer extends Application{
 				while(true) {
 					try {
 						message = input.readLine();
+						/*	when client socket is closed*, method readLine return null*
+						 * 	and, Gson.fromJson(null, class) >> return null*					*/
 //						displayText("receive : " + message);
-						displayText("test1 : " + message);				// null?
-						Message msg = gson.fromJson(message, Message.class);
-						displayText("test2 : " + message);				// null
-						displayText("test2 : " + msg);					// null						
-						displayText("[receive] " + msg.toString());		// error : message=null
-						displayText("test3 : " + message);
 						if(message == null) {
-							displayText("in if : " + message);
 							throw new IOException("Client Closed");
+						} else {
+							Message data = gson.fromJson(message, Message.class);
+							
+							for(Integer key : connections.keySet()) {
+								Client client = connections.get(key);
+								client.send(message);
+							}
 						}
-						displayText("out if : " + message);
-						for(Integer key : connections.keySet()) {
-							Client client = connections.get(key);
-							client.send(message);
-						}
-						displayText("out for : " + message);
 					} catch (IOException e) {
-						displayText("catch : " + message);
 						displayText("socket closed at [" + socket.getInetAddress() + "]");
 //						e.printStackTrace();
 						this.closeSocket();
