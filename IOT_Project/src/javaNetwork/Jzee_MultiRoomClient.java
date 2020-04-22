@@ -182,6 +182,7 @@ public class Jzee_MultiRoomClient extends Application{
 		inputField.setPrefSize(500, 40);
 		inputField.setOnAction((e) -> {
 			send(inputField.getText());
+			
 //			displayText(inputField.getText());
 			inputField.clear();
 		});
@@ -362,6 +363,12 @@ public class Jzee_MultiRoomClient extends Application{
 
 		public void setJsonData(String jsonData) {
 			this.jsonData = jsonData;
+		}
+
+		@Override
+		public String toString() {
+			return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
+					+ "]";
 		}
 		
 	}

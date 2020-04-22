@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.google.gson.Gson;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -34,6 +36,8 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	private Map<Integer, Room> roomlist = new ConcurrentHashMap<Integer, Room>();
 	private Map<Integer, Client> connections = new ConcurrentHashMap<Integer, Client>();
+	
+	private Gson gson = new Gson();
 	
 	
 	// =================================================================
@@ -217,7 +221,9 @@ public class Jzee_MultiRoomServer extends Application{
 				while(true) {
 					try {
 						message = input.readLine();
-						displayText("receive : " + message);
+//						displayText("receive : " + message);
+						Message msg = gson.fromJson(message, Message.class);
+						displayText("[receive] " + msg.toString());
 						if(message == null) {
 							throw new IOException("Client Closed");
 						}
@@ -326,6 +332,12 @@ public class Jzee_MultiRoomServer extends Application{
 
 			public void setJsonData(String jsonData) {
 				this.jsonData = jsonData;
+			}
+			
+			@Override
+			public String toString() {
+				return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
+						+ "]";
 			}
 			
 		}
