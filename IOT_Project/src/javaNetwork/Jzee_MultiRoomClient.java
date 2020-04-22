@@ -47,8 +47,8 @@ public class Jzee_MultiRoomClient extends Application{
 	private ListView<String> participantsListView;		// 채팅방 참여목록
 	
 	private Socket socket;
-	private BufferedReader br;
-	private PrintWriter pr;
+	private BufferedReader input;
+	private PrintWriter output;
 //	private Thread receiver;
 	private ExecutorService receiverPool = Executors.newFixedThreadPool(1);
 	private ExecutorService senderPool = Executors.newFixedThreadPool(1);
@@ -59,8 +59,8 @@ public class Jzee_MultiRoomClient extends Application{
 			try {
 				socket = new Socket();
 				socket.connect(new InetSocketAddress("localhost", 55566));
-				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				pr = new PrintWriter(socket.getOutputStream());
+				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				output = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
 			} catch (Exception e) {
 				if(!socket.isClosed()) { stopClient(); }
@@ -69,40 +69,15 @@ public class Jzee_MultiRoomClient extends Application{
 			receive();
 		};
 		receiverPool.submit(runnable);
-//		receiver = new Thread(() -> {
-//			try {
-//				socket = new Socket();
-//				socket.connect(new InetSocketAddress("70.12.60.91", 55566));
-//				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//				pr = new PrintWriter(socket.getOutputStream());
-//				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
-//			} catch (Exception e) {
-//				if(!socket.isClosed()) { stopClient(); }
-//				return;
-//			}
-//			receive();
-//		});
-//		receiver.start();
 	}
 	
 	public void stopClient() {
-//		try {
-//			receiver.interrupt();
-//			if(socket != null && socket.isClosed()) {
-//				br.close();
-//				pr.close();
-//				socket.close();
-//			}
-//			displayText("Server Disconnected");
-//		} catch (Exception e) {
-//			// do nothing
-//		}
-		System.out.println("called stopClient()");
+		System.out.println("stopClient() start");
 		try {
 			if(socket != null && !socket.isClosed()) {
 				System.out.println("in if");
-				br.close();
-				pr.close();
+				input.close();
+				output.close();
 				socket.close();
 			}
 			receiverPool.shutdownNow();
@@ -110,8 +85,9 @@ public class Jzee_MultiRoomClient extends Application{
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		System.out.println("finish stopClient()");
-		System.out.println("socket.isClosed() : " + socket.isClosed());
+		if(socket != null)
+			System.out.println("socket.isClosed() : " + socket.isClosed());
+		System.out.println("stopClient() end");
 	}
 	
 	public void receive() {
@@ -119,8 +95,8 @@ public class Jzee_MultiRoomClient extends Application{
 		boolean interrupt = false;
 		try {
 			while(!interrupt) {
-				if(br.ready()) {
-					message = br.readLine();
+				if(input.ready()) {
+					message = input.readLine();
 //					displayText("receive : " + message);
 				}
 			}
@@ -133,24 +109,14 @@ public class Jzee_MultiRoomClient extends Application{
 		Runnable runnable = () -> {
 			try {
 //				displayText("send() : " + message);
-				pr.println(message);
-				pr.flush();
+				output.println(message);
+				output.flush();
 			} catch (Exception e) {
 				displayText("send Error");
 				stopClient();
 			}
 		};
 		senderPool.submit(runnable);
-//		new Thread(() -> {
-//			try {
-//				displayText("send() : " + message);
-//				pr.println(message);
-//				pr.flush();
-//			} catch (Exception e) {
-//				displayText("send Error");
-//				stopClient();
-//			}
-//		}).start();
 	}
 	
 	// displayText(String msg)
