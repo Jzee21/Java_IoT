@@ -68,39 +68,6 @@ public class Jzee_ChatAnalysis {
 			{serverID, roomID, {userID, nickname}}
 	
 	
-	##### 	Use/Code	Message			
-	- @A	Server		Before saving a connection, 
-						Make sure the nickname is being used by another client
-			0x00000		{code, 0, 0, nickname}
-				
-	- @A1	Client		Connection not saved. isExist(nickname) = true
-						The nickname is already in use by another client
-			0x000001	{code, serverID, 0, 0}
-				 
-	- @A2	Client		Connection saved.	isExist(nickname) = false
-						No one is using the nickname
-			0x000002	{code, serverID, userID, [{roomID, roomName},...]
-		
-	- @B	Server		The client requests to enter the chat room.
-			0x001000	{code, userID, roomID, 0}
-			
-	- @B1	Client		The client receives the participant info for the chat room.
-						info : list of participants info (all - new one)(id, name)
-			0x001001	{code, serverID, roomID, [{userID, nickname}, ...]}
-
-	- @B2	Clients(B)	Inform new users to participants.
-						info : new participants info (new one)(id, name)
-			0x001002	{code, serverID, roomID, {userID, nickname}}
-	
-	- @C	Server		/
-			0x001001	{}
-	
-	- @C1	Server		/
-			0x001001	{}
-			
-	- @C2	Server		/
-			0x001001	{}	
-		
 		
 	@C Send Message
 		{userID, roomID, {message}}
@@ -109,6 +76,7 @@ public class Jzee_ChatAnalysis {
 			{serverID, roomID, {userID, message}
 				or
 			{userID, roomID, {message}}
+	
 	
 	@D New Room
 		{userID, null, {roomName}}
@@ -123,7 +91,8 @@ public class Jzee_ChatAnalysis {
 			{serverID, roomID, {roomID, roomName}}
 				or
 			{serverID, roomID, {roomName}}
-	
+
+
 	@E Disconn (Leave Room)
 		null*	- disconnected
 		- client.close, broadcast(1 and 2)
@@ -134,7 +103,55 @@ public class Jzee_ChatAnalysis {
 					   (roomList.get(roomID)).outClient(userID)
 			{serverID, roomID, {userID}}
 		
+			
 	
+	##### 	Use/Code	Message			
+	- @A	Server		Before saving a connection, 
+						Make sure the nickname is being used by another client
+			0x00000		{code, 0, 0, nickname}
+				
+	- @A1	Client		Connection not saved. [isExist(nickname) = true]
+						The nickname is already in use by another client
+			0x000001	{code, serverID, 0, 0}
+				 
+	- @A2	Client		Connection saved.	[isExist(nickname) = false]
+						No one is using the nickname
+			0x000002	{code, serverID, userID, {room_count, [{roomID, roomName},...]}}
+		
+	- @B	Server		The client requests to enter* the chat room.
+			0x001000	{code, userID, roomID, 0}
+	
+	- @B1	Server		The client fails to access the room.
+			0x001000	{code, serverID, roomID, {user_count, [{userID, 0}]}}		
+			
+	- @B2	Client		The client receives the participant info for the chat room.
+						info : list of participants info (all - new one)(id, name)
+			0x001001	{code, serverID, roomID, {client_count, [{userID, nickname}, ...]}}
+
+	- @B3	Clients(B)	Inform new users to participants.	(Broadcast)
+						info : new participants info (new one)(id, name)
+			0x001002	{code, serverID, roomID, {userID, nickname}}
+	
+	- @C	Server		Request broadcast of messages to participants by room id
+			0x001001	{code, userID, roomID, {userID, message}}
+	
+	- @C1	Client		The client fails to broadcast message.
+			0x001001	{code, serverID, roomID, {userID, message}}
+	
+	- @C2	Client(B)	Receive a message from a specific chat room (Broadcast)
+			0x001001	{code, serverID, roomID, {userID, message}}
+	
+	- @D	Server		The client requests to create a new room
+			0x001001	{code, userID, 0, {roomName}
+	
+	- @D1	Client		New room is created
+			0x001001	{code, serverID, roomID, {romID, roomName}}
+	
+	- @E	Server		The client disconnected or requests to finish chat.
+			0x001001	null or {code, userID, roomID, {@EXIT}}
+	
+	- @E1	Client(B)	A participant leaves the room
+			0x001001	{code, serverID, roomID, {userID}}
 	
 	*/
 	
