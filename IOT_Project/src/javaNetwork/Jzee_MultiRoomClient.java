@@ -237,7 +237,7 @@ public class Jzee_MultiRoomClient extends Application{
 				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				output = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
-			} catch (Exception e) {
+			} catch (Exception e) {	
 				if(!socket.isClosed()) { stopClient(); }
 				return;
 			}
