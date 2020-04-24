@@ -66,9 +66,6 @@ package javaArduino;
  	Arduino	: 5V			>>>		5-2(V) = 0.015A * ?R
  	LED  	: 2V, 15mA		>>>		R = 200
  	
- 	
- 	
- 	
  */
 public class ArduinoTest {
 
