@@ -2,8 +2,6 @@ package javaThread.procon;
 
 import java.util.LinkedList;
 
-import com.sun.marlin.stats.Monitor;
-
 /* 공용객체
  * Thread가 굥유하는 자료구조로 단 하나의 객체만 필요하다  - Singleton
  * 단 하나의 객체를 여러 Thread가 공유한다.
