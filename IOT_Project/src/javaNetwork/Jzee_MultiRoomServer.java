@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 
@@ -69,7 +70,9 @@ public class Jzee_MultiRoomServer extends Application{
 		stopBtn = new Button("Server Stop");
 		stopBtn.setPrefSize(200, 40);
 		stopBtn.setOnAction((event) -> {
-			stopServer();
+			System.out.println("### StopBtn call stopServer()");
+//			stopServer();
+			if(stopServer()) { displayText("##### Server Stoped #####"); }
 //			try {
 //				server.close();
 //				executor.shutdownNow();
@@ -92,6 +95,7 @@ public class Jzee_MultiRoomServer extends Application{
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
 			//
+			System.out.println("### CloseBtn call stopServer()");
 			stopServer();
 		});
 		primaryStage.show();
@@ -120,6 +124,7 @@ public class Jzee_MultiRoomServer extends Application{
 			server.setSoTimeout(3000);	// accept() 시간을 3초로 제한
 		} catch (Exception e) {
 			if(!server.isClosed()) {
+				System.out.println("### startServer() call-01 stopServer()");
 				stopServer();
 			}
 			return;		// Skip - runnable
@@ -136,14 +141,18 @@ public class Jzee_MultiRoomServer extends Application{
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
 					connections.put(client.userID, client);
-				} catch (SocketTimeoutException e) {					
+				} catch (SocketTimeoutException e) {	
+//					System.out.println("Accept() SocketTimeoutException");
 					if(Thread.interrupted()) {
+						System.out.println("Accept() interrupted");
 						break;
 					} else continue;
 				} catch (IOException e) {
+					System.out.println("Accept() IOException");
 					break;
 				} // try				
 			} // while
+			System.out.println("### startServer() call-02 stopServer()");
 			stopServer();
 		}; // runnable
 		executor.submit(runnable);
@@ -153,28 +162,48 @@ public class Jzee_MultiRoomServer extends Application{
 		
 	} // startServer() 
 	
-	public void stopServer() {
+	public boolean stopServer() {
+		System.out.println("stopServer()");
 		try {
 			for(Integer key : connections.keySet()) {
 				Client client = connections.get(key);
 				client.socket.close();
 				connections.remove(key);
 			}
+			System.out.println("stopServer() connections close");
 			if(server != null && !server.isClosed()) {
 				server.close();
+				System.out.println("stopServer() server close 1");
 			}
-			if(executor != null && executor.isShutdown()) {
-				executor.shutdownNow();
+			System.out.println("stopServer() server close 2");
+			if(executor != null && !executor.isShutdown()) {
+				executor.shutdown();
+				do { 
+					System.out.println("Pool Running.... {}" + executor.isTerminated());
+					// 작업이 완료되었으면 즉시 정지 한다. 
+					if (executor.isTerminated()) {
+						System.out.println("Running....2 {}" + executor.isTerminated());
+						executor.shutdownNow();
+					}
+					// 지정된 시간 별로(10초단위) 작업이 모든 작업이 중지되었는지 체크
+					// 작업이 완료되었으면 루프 해제
+				} while (!executor.awaitTermination(10, TimeUnit.SECONDS));
+				System.out.println("stopServer() executor closed 1");
 			}
-			displayText("##### Server Stoped #####");
+			System.out.println("stopServer() executor closed 2");
 		} catch (Exception e) {
 			// do nothing
+			System.out.println("stopServer() Exception");
+			return false;
 		} finally {
 			Platform.runLater(() -> {
 				startBtn.setDisable(false);
 				stopBtn.setDisable(true);
 			});
+			System.out.println("stopServer() set View");
 		}// try
+		System.out.println("stopServer() finish");
+		return true;
 	} // stopServer()
 	
 	
@@ -196,7 +225,7 @@ public class Jzee_MultiRoomServer extends Application{
 		
 		void closeSocket() {
 			String addr = socket.getInetAddress().toString();
-			displayText("[" + addr + "] cleaning...");
+//			displayText("[" + addr + "] cleaning...");
 			try {
 				if(socket != null && !socket.isClosed()) {
 					socket.close();
@@ -207,7 +236,7 @@ public class Jzee_MultiRoomServer extends Application{
 			} catch (IOException e) {
 				e.printStackTrace();
 			} // try
-			displayText("[" + addr + "] cleaned");
+			displayText("[" + addr + "] Cleaned");
 		}
 		
 		// method
@@ -241,7 +270,7 @@ public class Jzee_MultiRoomServer extends Application{
 							}
 						}
 					} catch (IOException e) {
-						displayText("socket closed at [" + socket.getInetAddress() + "]");
+						displayText("[" + socket.getInetAddress() + "] socket closed at Client");
 //						e.printStackTrace();
 						this.closeSocket();
 						break;

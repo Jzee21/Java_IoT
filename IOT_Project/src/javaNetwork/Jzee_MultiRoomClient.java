@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 
@@ -160,7 +161,8 @@ public class Jzee_MultiRoomClient extends Application{
 		disconnBtn = new Button("Disconn");
 		disconnBtn.setPrefSize(150, 40);
 		disconnBtn.setOnAction((e) -> {
-			stopClient();
+			System.out.println("disconnBtn call stopClient()");
+			stopClient("DisconnBtn");
 			Platform.runLater(() -> {
 				root.setBottom(namePane);
 			});
@@ -208,7 +210,8 @@ public class Jzee_MultiRoomClient extends Application{
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
-			stopClient();
+			System.out.println("closeBtn call stopClient()");
+			stopClient("CloseBtn");
 		});
 		primaryStage.show();
 		
@@ -238,27 +241,60 @@ public class Jzee_MultiRoomClient extends Application{
 				output = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
 			} catch (Exception e) {	
-				if(!socket.isClosed()) { stopClient(); }
+				System.out.println("Connection Exception");
+				if(!socket.isClosed()) { 
+					System.out.println("Connecter call stopClient()");
+					stopClient("Connecter");
+				}
+				System.out.println("Connecter return");
 				return;
 			}
+			System.out.println("Connecter start receiver");
 			receive();
 		};
+		System.out.println("out of runnable");
 		receiverPool.submit(runnable);
+		System.out.println("pool.submit(runnable)");
 	} // startClient()
 	
-	public void stopClient() {
+	public void stopClient(String who) {
+		System.out.println(who + "] stopClient() start");
 		try {
 			if(socket != null && !socket.isClosed()) {
 				socket.close();
+				System.out.println(who + "] stopClient() socket close");
 				if(input != null) input.close();
 				if(output != null) output.close();
+				System.out.println(who + "] stopClient() stream close");
 				displayText("[ Disconnected ]");
 			}
-			if(receiverPool != null && receiverPool.isShutdown())
-				receiverPool.shutdownNow();
-			if(senderPool != null && senderPool.isShutdown())
-				senderPool.shutdownNow();
+			System.out.println(who + "] stopClient() socket clean");
+			if(receiverPool != null && !receiverPool.isShutdown()) {
+				List<Runnable> list = receiverPool.shutdownNow();
+				System.out.println("reveiver ] " + list.size() + " is until running...");
+//				receiverPool.shutdown();
+//				do {
+//					if(receiverPool.isTerminated()) {
+//						receiverPool.shutdownNow();
+//					}
+//				} while (!receiverPool.awaitTermination(10, TimeUnit.SECONDS));
+				System.out.println(who + "] stopClient() receiver pool close");
+			}
+			System.out.println(who + "] stopClient() receiver pool clean");
+			if(senderPool != null && !senderPool.isShutdown()) {
+				List<Runnable> list = senderPool.shutdownNow();
+				System.out.println("sender ] " + list.size() + " is until running...");
+//				senderPool.shutdown();
+//				do {
+//					if(senderPool.isTerminated()) {
+//						senderPool.shutdownNow();
+//					}
+//				} while (!senderPool.awaitTermination(10, TimeUnit.SECONDS));
+				System.out.println(who + "] stopClient() sender pool close");
+			}
+			System.out.println(who + "] stopClient() sender pool clean");
 		} catch (Exception e) {
+			System.out.println(who + "] stopClient() Exception");
 			displayText("[ Disconnection Error ]");
 			e.printStackTrace();
 		} finally {
@@ -268,21 +304,29 @@ public class Jzee_MultiRoomClient extends Application{
 				root.setBottom(namePane);
 			});
 		} // try
+		System.out.println(who + "] stopClient() finish");
 	} // stopClient()
 	
 	// ---------------------------------------------------
 	public void receive() {
+		System.out.println("receive");
 		String message = "";
-		try {
-			while(true) {
+		while(true) {
+			try {
+				System.out.println("receive running...");
 				message = input.readLine();
 				if(message == null) {
 					// Server's socket closed
 					throw new IOException();
+				} else {
+					displayText(message);
 				}
+				System.out.println("receive loop end");
+			} catch (IOException e) {
+				System.out.println("receiver call stopClient()");
+				stopClient("receive()");
+				break;
 			}
-		} catch (IOException e) {
-			stopClient();
 		}
 	} // receive()
 	
@@ -314,7 +358,8 @@ public class Jzee_MultiRoomClient extends Application{
 				output.flush();
 			} catch (Exception e) {
 				displayText("send Error");
-				stopClient();
+				System.out.println("send() call stopClient()");
+				stopClient("send()");
 			}
 		};
 		senderPool.submit(runnable);
