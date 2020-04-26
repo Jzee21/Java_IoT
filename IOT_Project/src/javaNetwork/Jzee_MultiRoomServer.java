@@ -140,7 +140,7 @@ public class Jzee_MultiRoomServer extends Application{
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
-					connections.put(client.userID, client);
+//					connections.put(client.userID, client);
 				} catch (SocketTimeoutException e) {	
 //					System.out.println("Accept() SocketTimeoutException");
 					if(Thread.interrupted()) {
@@ -209,6 +209,7 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	// =================================================================
 	class Client {
+//		private static int seq = 0;
 		int userID;
 		String nickname;
 		Socket socket;
@@ -218,6 +219,7 @@ public class Jzee_MultiRoomServer extends Application{
 		
 		Client(Socket socket) {
 			this.socket = socket;
+//			this.userID = ++seq;
 			this.userID = this.hashCode();
 			connections.put(userID, this);
 			receive();
@@ -313,71 +315,71 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	
 	// =================================================================
-		class Message {
-			private int code;
-			private int userID;
-			private int targetID;
-			private String jsonData;
-			
-			public Message(String jsonData) {
-				this.jsonData = jsonData;
-			}
-			
-			public Message(int code, int userID, int targetID) {
-				this.code = code;
-				this.userID = userID;
-				this.targetID = targetID;
-			}
-			
-			public Message(int code, int userID, String jsonData) {
-				this.code = code;
-				this.userID = userID;
-				this.jsonData = jsonData;
-			}
-			
-			public Message(int code, int userID, int targetID, String jsonData) {
-				this(code, userID, targetID);
-				this.jsonData = jsonData;
-			}
-
-			public int getCode() {
-				return code;
-			}
-
-			public void setCode(int code) {
-				this.code = code;
-			}
-
-			public int getUserID() {
-				return userID;
-			}
-
-			public void setUserID(int userID) {
-				this.userID = userID;
-			}
-
-			public int getTargetID() {
-				return targetID;
-			}
-
-			public void setTargetID(int targetID) {
-				this.targetID = targetID;
-			}
-
-			public String getJsonData() {
-				return jsonData;
-			}
-
-			public void setJsonData(String jsonData) {
-				this.jsonData = jsonData;
-			}
-			
-			@Override
-			public String toString() {
-				return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
-						+ "]";
-			}
-			
+	class Message {
+		private int code;
+		private int userID;
+		private int targetID;
+		private String jsonData;
+		
+		public Message(String jsonData) {
+			this.jsonData = jsonData;
 		}
+		
+		public Message(int code, int userID, int targetID) {
+			this.code = code;
+			this.userID = userID;
+			this.targetID = targetID;
+		}
+		
+		public Message(int code, int userID, String jsonData) {
+			this.code = code;
+			this.userID = userID;
+			this.jsonData = jsonData;
+		}
+		
+		public Message(int code, int userID, int targetID, String jsonData) {
+			this(code, userID, targetID);
+			this.jsonData = jsonData;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public void setCode(int code) {
+			this.code = code;
+		}
+
+		public int getUserID() {
+			return userID;
+		}
+
+		public void setUserID(int userID) {
+			this.userID = userID;
+		}
+
+		public int getTargetID() {
+			return targetID;
+		}
+
+		public void setTargetID(int targetID) {
+			this.targetID = targetID;
+		}
+
+		public String getJsonData() {
+			return jsonData;
+		}
+
+		public void setJsonData(String jsonData) {
+			this.jsonData = jsonData;
+		}
+		
+		@Override
+		public String toString() {
+			return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
+					+ "]";
+		}
+		
+	}
 
 }
