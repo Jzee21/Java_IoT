@@ -140,19 +140,20 @@ public class Jzee_MultiRoomServer extends Application{
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
+					displayText("[" + socket.getInetAddress() + "] id : " + client.userID);
 //					connections.put(client.userID, client);
 				} catch (SocketTimeoutException e) {	
 //					System.out.println("Accept() SocketTimeoutException");
 					if(Thread.interrupted()) {
-						System.out.println("Accept() interrupted");
+//						System.out.println("Accept() interrupted");
 						break;
 					} else continue;
 				} catch (IOException e) {
-					System.out.println("Accept() IOException");
+//					System.out.println("Accept() IOException");
 					break;
 				} // try				
 			} // while
-			System.out.println("### startServer() call-02 stopServer()");
+//			System.out.println("### startServer() call-02 stopServer()");
 			stopServer();
 		}; // runnable
 		executor.submit(runnable);
@@ -163,46 +164,46 @@ public class Jzee_MultiRoomServer extends Application{
 	} // startServer() 
 	
 	public boolean stopServer() {
-		System.out.println("stopServer()");
+//		System.out.println("stopServer()");
 		try {
 			for(Integer key : connections.keySet()) {
 				Client client = connections.get(key);
 				client.socket.close();
 				connections.remove(key);
 			}
-			System.out.println("stopServer() connections close");
+//			System.out.println("stopServer() connections close");
 			if(server != null && !server.isClosed()) {
 				server.close();
-				System.out.println("stopServer() server close 1");
+//				System.out.println("stopServer() server close 1");
 			}
-			System.out.println("stopServer() server close 2");
+//			System.out.println("stopServer() server close 2");
 			if(executor != null && !executor.isShutdown()) {
 				executor.shutdown();
 				do { 
-					System.out.println("Pool Running.... {}" + executor.isTerminated());
+//					System.out.println("Pool Running.... {}" + executor.isTerminated());
 					// 작업이 완료되었으면 즉시 정지 한다. 
 					if (executor.isTerminated()) {
-						System.out.println("Running....2 {}" + executor.isTerminated());
+//						System.out.println("Running....2 {}" + executor.isTerminated());
 						executor.shutdownNow();
 					}
 					// 지정된 시간 별로(10초단위) 작업이 모든 작업이 중지되었는지 체크
 					// 작업이 완료되었으면 루프 해제
 				} while (!executor.awaitTermination(10, TimeUnit.SECONDS));
-				System.out.println("stopServer() executor closed 1");
+//				System.out.println("stopServer() executor closed 1");
 			}
-			System.out.println("stopServer() executor closed 2");
+//			System.out.println("stopServer() executor closed 2");
 		} catch (Exception e) {
 			// do nothing
-			System.out.println("stopServer() Exception");
+//			System.out.println("stopServer() Exception");
 			return false;
 		} finally {
 			Platform.runLater(() -> {
 				startBtn.setDisable(false);
 				stopBtn.setDisable(true);
 			});
-			System.out.println("stopServer() set View");
+//			System.out.println("stopServer() set View");
 		}// try
-		System.out.println("stopServer() finish");
+//		System.out.println("stopServer() finish");
 		return true;
 	} // stopServer()
 	
