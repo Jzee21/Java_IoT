@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,6 +14,8 @@ import java.net.Socket;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -31,13 +34,15 @@ public class EX03_ArduinoSerialServer extends Application {
 	
 	private ServerSocket server;
 	private BufferedReader socketIn;
+	private PrintWriter socketOut;
 	
 	private CommPortIdentifier portIdentifier;
 	private CommPort commPort;
 	private SerialPort serial;
 	private InputStream serialIn;
 	private OutputStream serialOut;
-//	 private BufferedWriter bw;
+	private BufferedWriter serialBW;
+	private BufferedReader serialBR;
 	
 	private final String COMPORT = "COM7";
 
@@ -76,6 +81,7 @@ public class EX03_ArduinoSerialServer extends Application {
 						Socket s = server.accept();
 						displayText("[Client - " + s.getInetAddress() + "] connected");
 						socketIn = new BufferedReader(new InputStreamReader(s.getInputStream()));
+						socketOut = new PrintWriter(s.getOutputStream());
 						
 						String msg = "";
 						while ((msg = socketIn.readLine()) != null) {
@@ -85,6 +91,7 @@ public class EX03_ArduinoSerialServer extends Application {
 								displayText("pwm : " + data);
 								serialOut.write(data);
 //								bw.write(msg, 0, msg.length());
+																
 							}
 						}
 					} catch (Exception e) {
@@ -124,19 +131,23 @@ public class EX03_ArduinoSerialServer extends Application {
 			if(portIdentifier.isCurrentlyOwned()) {
 				System.out.println("포트가 사용중입니다.");
 			} else {
-				this.commPort = portIdentifier.open("PORT_OPEN", 2000);
+				commPort = portIdentifier.open("PORT_OPEN", 2000);
 				
 				if(commPort instanceof SerialPort) {
-					this.serial = (SerialPort)commPort;
-					this.serial.setSerialPortParams(
+					serial = (SerialPort)commPort;
+					serial.setSerialPortParams(
 							9600, 
 							SerialPort.DATABITS_8, 
 							SerialPort.STOPBITS_1, 
 							SerialPort.PARITY_NONE);
 					
-					this.serialIn = this.serial.getInputStream();
-					this.serialOut = this.serial.getOutputStream();
-//					this.bw = new BufferedWriter(new OutputStreamWriter(serialOut));
+					serialIn = this.serial.getInputStream();
+					serialOut = this.serial.getOutputStream();
+					serialBW = new BufferedWriter(new OutputStreamWriter(serialOut));
+					serialBR = new BufferedReader(new InputStreamReader(serialIn));
+					
+					serial.addEventListener(new SerialEventListener(serialIn));
+					serial.notifyOnDataAvailable(true);
 					
 				} else {
 					System.out.println("Serial Port가 아닙니다.");
@@ -146,6 +157,43 @@ public class EX03_ArduinoSerialServer extends Application {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	class SerialEventListener implements SerialPortEventListener {
+		
+		private InputStream in;
+		private String datas = "";
+		
+		public SerialEventListener (InputStream in) {
+			this.in = in;
+		}
+		
+		@Override
+		public void serialEvent(SerialPortEvent event) {		
+			if(event.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
+				try {
+					int size = in.available();		// data size
+					byte[] data = new byte[size];
+					
+					in.read(data, 0, size);
+//					System.out.print("_" + new String(data) + "_");
+					datas += new String(data);
+					String[] list = datas.split("\n");
+					if(list.length != 1) {
+						for(int i=0 ; i<list.length-1 ; i++) {
+//						System.out.println("data : " + list[i]);
+							displayText("echo : " + list[i]);
+							socketOut.println(list[i]);
+							socketOut.flush();
+						}
+						datas = list[list.length-1];
+					}
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
