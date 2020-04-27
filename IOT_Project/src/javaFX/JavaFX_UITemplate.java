@@ -15,10 +15,8 @@ public class JavaFX_UITemplate extends Application {
 	
 	private TextArea ta;
 	private Button startBtn, stopBtn;
-	private Thread currentThread;
-	
 
-	private void printMsg(String msg) {
+	private void displayText(String msg) {
 		Platform.runLater(() -> {
 			ta.appendText(msg + "\n");
 		});
@@ -37,13 +35,13 @@ public class JavaFX_UITemplate extends Application {
 		ta = new TextArea();
 		root.setCenter(ta);
 		
-		startBtn = new Button("Start Thread");
+		startBtn = new Button("Start");
 		startBtn.setPrefSize(250, 50);
 		startBtn.setOnAction((e) -> {
 			//
 		});
 		
-		stopBtn = new Button("Stop Thread");
+		stopBtn = new Button("Stop");
 		stopBtn.setPrefSize(250,  50);
 		stopBtn.setOnAction((e) -> {
 			//
@@ -59,7 +57,7 @@ public class JavaFX_UITemplate extends Application {
 		//
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
-		primaryStage.setTitle("예제용 JavaFX");
+		primaryStage.setTitle("Title");
 		primaryStage.setOnCloseRequest(e -> {
 			// System.exit(0);
 		});
