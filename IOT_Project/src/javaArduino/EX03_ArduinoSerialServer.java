@@ -176,17 +176,21 @@ public class EX03_ArduinoSerialServer extends Application {
 					byte[] data = new byte[size];
 					
 					in.read(data, 0, size);
-//					System.out.print("_" + new String(data) + "_");
 					datas += new String(data);
-					String[] list = datas.split("\n");
+					
+					boolean flag = datas.endsWith("/");
+					String[] list = datas.split("/");
 					if(list.length != 1) {
+						displayText("data 1 : " + datas);
 						for(int i=0 ; i<list.length-1 ; i++) {
-//						System.out.println("data : " + list[i]);
 							displayText("echo : " + list[i]);
 							socketOut.println(list[i]);
-							socketOut.flush();
+							socketOut.flush();								
 						}
 						datas = list[list.length-1];
+						if(flag) {
+							datas += "/";
+						}
 					}
 					
 				} catch (Exception e) {
