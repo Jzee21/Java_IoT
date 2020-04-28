@@ -2,6 +2,7 @@ package javaArduino;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -33,6 +34,7 @@ public class EX03_ArduinoSerialServer extends Application {
 	private Button startBtn, stopBtn;
 	
 	private ServerSocket server;
+	private Socket socket;
 	private BufferedReader socketIn;
 	private PrintWriter socketOut;
 	
@@ -44,7 +46,7 @@ public class EX03_ArduinoSerialServer extends Application {
 	private BufferedWriter serialBW;
 	private BufferedReader serialBR;
 	
-	private final String COMPORT = "COM7";
+	private final String COMPORT = "COM5";
 
 	private void displayText(String msg) {
 		Platform.runLater(() -> {
@@ -69,7 +71,7 @@ public class EX03_ArduinoSerialServer extends Application {
 		startBtn.setPrefSize(250, 50);
 		startBtn.setOnAction((e) -> {
 			
-			Runnable r = new Runnable() {
+			Runnable sender = new Runnable() {
 				
 				@Override
 				public void run() {
@@ -78,11 +80,11 @@ public class EX03_ArduinoSerialServer extends Application {
 						server.bind(new InetSocketAddress(55566));
 						displayText("## Server Start ##");
 						
-						Socket s = server.accept();
-						displayText("[Client - " + s.getInetAddress() + "] connected");
-						socketIn = new BufferedReader(new InputStreamReader(s.getInputStream()));
-						socketOut = new PrintWriter(s.getOutputStream());
-						
+						socket = server.accept();
+						displayText("[Client - " + socket.getInetAddress() + "] connected");
+						socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+						socketOut = new PrintWriter(socket.getOutputStream());
+							
 						String msg = "";
 						while ((msg = socketIn.readLine()) != null) {
 							int data = Integer.parseInt(msg);
@@ -91,15 +93,15 @@ public class EX03_ArduinoSerialServer extends Application {
 								displayText("pwm : " + data);
 								serialOut.write(data);
 //								bw.write(msg, 0, msg.length());
-																
 							}
 						}
 					} catch (Exception e) {
+						displayText("[Error]" + e.toString());
 						System.out.println(e.toString());
 					}
 				}
 			}; // Runnable
-			Thread t = new Thread(r);
+			Thread t = new Thread(sender);
 			t.start();
 			
 		}); // startBtn.setOnAction
@@ -107,7 +109,18 @@ public class EX03_ArduinoSerialServer extends Application {
 		stopBtn = new Button("Stop Server");
 		stopBtn.setPrefSize(250,  50);
 		stopBtn.setOnAction((e) -> {
-			//
+			try {
+				if(socket != null && !socket.isClosed()) {
+					socket.close();
+					socketIn.close();
+					socketOut.close();
+				}
+				if(server != null && !server.isClosed()) {
+					server.close();
+				}
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}); // stopBtn.setOnAction
 		
 		FlowPane flowpane = new FlowPane();
@@ -162,7 +175,7 @@ public class EX03_ArduinoSerialServer extends Application {
 	class SerialEventListener implements SerialPortEventListener {
 		
 		private InputStream in;
-		private String datas = "";
+//		private String datas = "";
 		
 		public SerialEventListener (InputStream in) {
 			this.in = in;
@@ -176,22 +189,9 @@ public class EX03_ArduinoSerialServer extends Application {
 					byte[] data = new byte[size];
 					
 					in.read(data, 0, size);
-					datas += new String(data);
-					
-					boolean flag = datas.endsWith("/");
-					String[] list = datas.split("/");
-					if(list.length != 1) {
-						displayText("data 1 : " + datas);
-						for(int i=0 ; i<list.length-1 ; i++) {
-							displayText("echo : " + list[i]);
-							socketOut.println(list[i]);
-							socketOut.flush();								
-						}
-						datas = list[list.length-1];
-						if(flag) {
-							datas += "/";
-						}
-					}
+					String str = new String(data);
+					socketOut.println(str);
+					socketOut.flush();
 					
 				} catch (Exception e) {
 					e.printStackTrace();
