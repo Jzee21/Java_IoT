@@ -92,7 +92,7 @@ public class Jzee_MultiRoomServer extends Application{
 		// Scene
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
-		primaryStage.setTitle("Multi Room Chat Client");
+		primaryStage.setTitle("Multi Room Chat Server");
 		primaryStage.setOnCloseRequest((e) -> {
 			//
 			System.out.println("### CloseBtn call stopServer()");
@@ -140,7 +140,7 @@ public class Jzee_MultiRoomServer extends Application{
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
-					displayText("[" + socket.getInetAddress() + "] id : " + client.userID);
+//					displayText("[" + socket.getInetAddress() + "] id : " + client.userID);
 //					connections.put(client.userID, client);
 				} catch (SocketTimeoutException e) {	
 //					System.out.println("Accept() SocketTimeoutException");
@@ -255,6 +255,17 @@ public class Jzee_MultiRoomServer extends Application{
 //					e.printStackTrace();
 					this.closeSocket();
 				} // try
+				
+				// set nickname
+				try {
+					String nickname = input.readLine();
+					this.nickname = nickname;
+					displayText("[" + socket.getInetAddress() + "] id : " + this.userID);
+					displayText("[" + socket.getInetAddress() + "] nickname : " + this.nickname);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 					
 				while(true) {
 					try {

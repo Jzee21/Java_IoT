@@ -240,6 +240,11 @@ public class Jzee_MultiRoomClient extends Application{
 				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				output = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
+				
+				// send nickname
+				String nickname = nameField.getText();
+				output.println(nickname);
+				output.flush();
 			} catch (Exception e) {	
 				System.out.println("Connection Exception");
 				if(!socket.isClosed()) { 
