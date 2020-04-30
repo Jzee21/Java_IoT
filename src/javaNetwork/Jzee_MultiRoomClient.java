@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 
+import javaNetwork.Jzee_MultiRoomServer.Room;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -35,15 +36,9 @@ import javafx.stage.Stage;
 
 public class Jzee_MultiRoomClient extends Application{
 	
-	private int userID = 123456;
-	private String nickname;
-	
+	// UI
 	private BorderPane root;
 	private FlowPane namePane, menuPane, inputPane;
-	
-	private TextArea textarea;
-	
-	private List<TextArea> taList;
 	
 	private TextField nameField, inputField;
 	private Button connBtn, disconnBtn, createBtn, menuBtn;
@@ -52,10 +47,14 @@ public class Jzee_MultiRoomClient extends Application{
 	private ListView<String> roomListView;
 	private ListView<String> participantsListView;		// 채팅방 참여목록
 	
+	// User
+	private int userID;
+	private String nickname;
+	private TextArea textarea;
+	
 	private Socket socket;
 	private BufferedReader input;
 	private PrintWriter output;
-//	private Thread receiver;
 	private ExecutorService receiverPool;
 	private ExecutorService senderPool;
 	
@@ -97,11 +96,6 @@ public class Jzee_MultiRoomClient extends Application{
 		textarea.setEditable(false);
 		root.setCenter(textarea);
 		
-		taList = new ArrayList<TextArea>();
-//		taList.add(new TextArea("1"));
-//		taList.add(new TextArea("2"));
-//		taList.add(new TextArea("3"));
-		
 		
 		// Right -----------------------------------------------
 		// roomList
@@ -110,13 +104,17 @@ public class Jzee_MultiRoomClient extends Application{
 				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
 					int index = roomListView.getSelectionModel().getSelectedIndex();
 					Platform.runLater(() -> {
-						root.setCenter(taList.get(index));
+//						root.setCenter(taList.get(index));
 						inputField.setEditable(true);
 					});
 				});
 		
 		// participantsList
 		participantsListView = new ListView<String>();
+		participantsListView.getSelectionModel().selectedItemProperty().addListener(
+				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
+					int index = participantsListView.getSelectionModel().getSelectedIndex();
+				});
 		
 		// Right GridPane
 		GridPane gridpane = new GridPane();
@@ -126,6 +124,7 @@ public class Jzee_MultiRoomClient extends Application{
 		gridpane.add(participantsListView, 0, 1);	// (column, row)
 		
 		root.setRight(gridpane);
+		
 		
 		// Bottom ----------------------------------------------
 		namePane = new FlowPane();
@@ -161,8 +160,9 @@ public class Jzee_MultiRoomClient extends Application{
 		disconnBtn = new Button("Disconn");
 		disconnBtn.setPrefSize(150, 40);
 		disconnBtn.setOnAction((e) -> {
-			System.out.println("disconnBtn call stopClient()");
-			stopClient("DisconnBtn");
+//			System.out.println("disconnBtn call stopClient()");
+//			stopClient("DisconnBtn");
+			stopClient();
 			Platform.runLater(() -> {
 				root.setBottom(namePane);
 			});
@@ -211,7 +211,8 @@ public class Jzee_MultiRoomClient extends Application{
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
 			System.out.println("closeBtn call stopClient()");
-			stopClient("CloseBtn");
+//			stopClient("CloseBtn");
+			stopClient();
 		});
 		primaryStage.show();
 		
@@ -245,61 +246,67 @@ public class Jzee_MultiRoomClient extends Application{
 				String nickname = nameField.getText();
 				output.println(nickname);
 				output.flush();
+				
+				// set Room list
+//				String roomsData = input.readLine();
+				
 			} catch (Exception e) {	
-				System.out.println("Connection Exception");
+//				System.out.println("Connection Exception");
 				if(!socket.isClosed()) { 
-					System.out.println("Connecter call stopClient()");
-					stopClient("Connecter");
+//					System.out.println("Connecter call stopClient()");
+//					stopClient("Connecter");
+					stopClient();
 				}
-				System.out.println("Connecter return");
+//				System.out.println("Connecter return");
 				return;
 			}
-			System.out.println("Connecter start receiver");
+//			System.out.println("Connecter start receiver");
 			receive();
 		};
-		System.out.println("out of runnable");
+//		System.out.println("out of runnable");
 		receiverPool.submit(runnable);
-		System.out.println("pool.submit(runnable)");
+//		System.out.println("pool.submit(runnable)");
 	} // startClient()
 	
-	public void stopClient(String who) {
-		System.out.println(who + "] stopClient() start");
+	public void stopClient() {
+//	public void stopClient(String who) {
+//		System.out.println(who + "] stopClient() start");
 		try {
 			if(socket != null && !socket.isClosed()) {
 				socket.close();
-				System.out.println(who + "] stopClient() socket close");
+//				System.out.println(who + "] stopClient() socket close");
 				if(input != null) input.close();
 				if(output != null) output.close();
-				System.out.println(who + "] stopClient() stream close");
+//				System.out.println(who + "] stopClient() stream close");
 				displayText("[ Disconnected ]");
 			}
-			System.out.println(who + "] stopClient() socket clean");
+//			System.out.println(who + "] stopClient() socket clean");
 			if(receiverPool != null && !receiverPool.isShutdown()) {
 				List<Runnable> list = receiverPool.shutdownNow();
-				System.out.println("reveiver ] " + list.size() + " is until running...");
+//				System.out.println("reveiver ] " + list.size() + " is until running...");
 //				receiverPool.shutdown();
 //				do {
 //					if(receiverPool.isTerminated()) {
 //						receiverPool.shutdownNow();
 //					}
 //				} while (!receiverPool.awaitTermination(10, TimeUnit.SECONDS));
-				System.out.println(who + "] stopClient() receiver pool close");
+//				System.out.println(who + "] stopClient() receiver pool close");
 			}
-			System.out.println(who + "] stopClient() receiver pool clean");
+//			System.out.println(who + "] stopClient() receiver pool clean");
 			if(senderPool != null && !senderPool.isShutdown()) {
 				List<Runnable> list = senderPool.shutdownNow();
-				System.out.println("sender ] " + list.size() + " is until running...");
+//				System.out.println("sender ] " + list.size() + " is until running...");
 //				senderPool.shutdown();
 //				do {
 //					if(senderPool.isTerminated()) {
 //						senderPool.shutdownNow();
 //					}
 //				} while (!senderPool.awaitTermination(10, TimeUnit.SECONDS));
-				System.out.println(who + "] stopClient() sender pool close");
+//				System.out.println(who + "] stopClient() sender pool close");
 			}
-			System.out.println(who + "] stopClient() sender pool clean");
+//			System.out.println(who + "] stopClient() sender pool clean");
 		} catch (Exception e) {
-			System.out.println(who + "] stopClient() Exception");
+//			System.out.println(who + "] stopClient() Exception");
 			displayText("[ Disconnection Error ]");
 			e.printStackTrace();
 		} finally {
@@ -309,16 +316,16 @@ public class Jzee_MultiRoomClient extends Application{
 				root.setBottom(namePane);
 			});
 		} // try
-		System.out.println(who + "] stopClient() finish");
+//		System.out.println(who + "] stopClient() finish");
 	} // stopClient()
 	
 	// ---------------------------------------------------
 	public void receive() {
-		System.out.println("receive");
+//		System.out.println("receive");
 		String message = "";
 		while(true) {
 			try {
-				System.out.println("receive running...");
+//				System.out.println("receive running...");
 				message = input.readLine();
 				if(message == null) {
 					// Server's socket closed
@@ -326,10 +333,11 @@ public class Jzee_MultiRoomClient extends Application{
 				} else {
 					displayText(message);
 				}
-				System.out.println("receive loop end");
+//				System.out.println("receive loop end");
 			} catch (IOException e) {
-				System.out.println("receiver call stopClient()");
-				stopClient("receive()");
+//				System.out.println("receiver call stopClient()");
+//				stopClient("receive()");
+				stopClient();
 				break;
 			}
 		}
@@ -339,20 +347,7 @@ public class Jzee_MultiRoomClient extends Application{
 		
 		if(message != null && !message.equals(""))
 			send(new Message(0x000101, userID, message));
-		
-//		Runnable runnable = () -> {
-//			try {
-////				displayText("send() : " + message);
-//				String json = gson.toJson(new Message(message));
-//				output.println(json);
-////				output.println(message);
-//				output.flush();
-//			} catch (Exception e) {
-//				displayText("send Error");
-//				stopClient();
-//			}
-//		};
-//		senderPool.submit(runnable);
+
 	} // send(String message)
 	
 	public void send(Message message) {
@@ -363,14 +358,137 @@ public class Jzee_MultiRoomClient extends Application{
 				output.flush();
 			} catch (Exception e) {
 				displayText("send Error");
-				System.out.println("send() call stopClient()");
-				stopClient("send()");
+//				System.out.println("send() call stopClient()");
+//				stopClient("send()");
+				stopClient();
 			}
 		};
 		senderPool.submit(runnable);
 	} // send(Message message)
+
 	
 
+	// =================================================================
+	class Client {
+		private int userID;
+		private String nickname;
+		
+		public Client(int userID, String nickname) {
+			this.userID = userID;
+			this.nickname = nickname;
+		}
+
+		public int getUserID() {
+			return userID;
+		}
+
+		public String getNickname() {
+			return nickname;
+		}
+		
+		public void setUserID(int userID) {
+			this.userID = userID;
+		}
+		
+		public void setNickname(String nickname) {
+			this.nickname = nickname;
+		}
+		
+	}
+	
+	
+	// =================================================================
+	class Room {
+		private int roomID;
+		private String roomName;
+		private TextArea ta;
+		private List<Client> list;
+		
+		public Room(int roomID, String roomName) {
+			this.roomID = roomID;
+			this.roomName = roomName;
+			this.ta = new TextArea();
+			this.list = new ArrayList<Client>();
+		}
+		
+		public Room(RoomForm form) {
+			this.roomID = form.roomID;
+			this.roomName = form.roomName;
+			this.ta = new TextArea();
+		}
+		
+		public int getRoomID() {
+			return roomID;
+		}
+		
+		public void setRoomID(int roomID) {
+			this.roomID = roomID;
+		}
+		
+		public String getRoomName() {
+			return roomName;
+		}
+		
+		public void setRoomName(String roomName) {
+			this.roomName = roomName;
+		}
+		
+		public TextArea getTa() {
+			return ta;
+		}
+		
+		public List<Client> getList() {
+			return list;
+		}
+		
+		public void addPart(Client client) {
+			this.list.add(client);
+		}
+		
+		public void addParts(List<Client> list) {
+			for(Client client : list) {
+				this.list.add(client);
+			}
+		}
+		
+		public void removePart(Client client) {
+			for(Client c : list) {
+				if(c.getNickname().equals(client.getNickname())) {
+					this.list.remove(c);
+				}
+			}
+		}
+		 
+	}
+	
+	
+	
+	// =================================================================
+	class RoomForm {
+		int roomID;
+		String roomName;
+		
+		RoomForm(Room room) {
+			this.roomID = room.getRoomID();
+			this.roomName = room.getRoomName();
+		}
+		
+		public int getRoomID() {
+			return roomID;
+		}
+		public void setRoomID(int roomID) {
+			this.roomID = roomID;
+		}
+		public String getRoomName() {
+			return roomName;
+		}
+		public void setRoomName(String roomName) {
+			this.roomName = roomName;
+		}
+		
+	}
+	
+	
 	
 	// =================================================================
 	class Message {
