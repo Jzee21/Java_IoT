@@ -210,26 +210,38 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	// =================================================================
 	class Client {
-		int userID;
-		String nickname;
-		Socket socket;
-		BufferedReader input;
-		PrintWriter output;
+		private int userID;
+		private String nickname;
+		private Socket socket;
+		private BufferedReader input;
+		private PrintWriter output;
 //		List<Integer> list;
 		
 		// tester
-		Client(String nickname) {
+		public Client(String nickname) {
 			this.userID = this.hashCode();
 			this.nickname = nickname;
 		}
 		
-		Client(Socket socket) {
+		public Client(Socket socket) {
 			this.socket = socket;
 			this.userID = this.hashCode();
 			connections.put(this.userID, this);
 			receive();
 		}
 		
+		public int getUserID() {
+			return userID;
+		}
+
+		public String getNickname() {
+			return nickname;
+		}
+
+		public void setNickname(String nickname) {
+			this.nickname = nickname;
+		}
+
 		void closeSocket() {
 			String addr = socket.getInetAddress().toString();
 //			displayText("[" + addr + "] cleaning...");
@@ -316,7 +328,47 @@ public class Jzee_MultiRoomServer extends Application{
 			executor.submit(runnable);
 		} // send()
 		
+		void send(Message message) {
+			Runnable runnable = () -> {
+				String jsonMsg = gson.toJson(message);
+				output.println(jsonMsg);
+				output.flush();
+			};
+			executor.submit(runnable);
+		}
+		
 	}
+	
+	
+	
+	// =================================================================
+	class ClientForm {
+		int userID;
+		String nickname;
+		
+		ClientForm(Client client) {
+			this.userID = client.getUserID();
+			this.nickname = client.getNickname();
+		}
+		
+		public int getUserID() {
+			return userID;
+		}
+		
+		public void setUserID(int userID) {
+			this.userID = userID;
+		}
+		
+		public String getNickname() {
+			return nickname;
+		}
+		
+		public void setNickname(String nickname) {
+			this.nickname = nickname;
+		}
+		
+	}
+	
 	
 	
 	// =================================================================
@@ -329,8 +381,56 @@ public class Jzee_MultiRoomServer extends Application{
 			this.roomName = roomName;
 			this.roomID = this.hashCode();
 		}
+
+		public int getRoomID() {
+			return roomID;
+		}
+
+		public String getRoomName() {
+			return roomName;
+		}
+
+		public void setRoomName(String roomName) {
+			this.roomName = roomName;
+		}
+
+		public List<Integer> getList() {
+			return list;
+		}
+
+		public void setList(List<Integer> list) {
+			this.list = list;
+		}
 		
 	}
+		
+	
+	
+	// =================================================================
+	class RoomForm {
+		int roomID;
+		String roomName;
+		
+		RoomForm(Room room) {
+			this.roomID = room.getRoomID();
+			this.roomName = room.getRoomName();
+		}
+		
+		public int getRoomID() {
+			return roomID;
+		}
+		public void setRoomID(int roomID) {
+			this.roomID = roomID;
+		}
+		public String getRoomName() {
+			return roomName;
+		}
+		public void setRoomName(String roomName) {
+			this.roomName = roomName;
+		}
+		
+	}
+	
 	
 	
 	// =================================================================
