@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -35,9 +36,8 @@ public class Jzee_MultiRoomServer extends Application{
 	private ExecutorService executor; // = Executors.newCachedThreadPool();
 	private ServerSocket server;
 	
-	private Map<Integer, Room> roomlist = new ConcurrentHashMap<Integer, Room>();
-	private Map<Integer, Client> connections = new ConcurrentHashMap<Integer, Client>();
-	
+	private Map<Integer, Room> chatrooms = new ConcurrentHashMap<Integer, Room>();
+	private Map<Integer, Client> connections = new ConcurrentHashMap<Integer, Client>();	
 	private Gson gson = new Gson();
 	
 	
@@ -210,19 +210,23 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	// =================================================================
 	class Client {
-//		private static int seq = 0;
 		int userID;
 		String nickname;
 		Socket socket;
 		BufferedReader input;
 		PrintWriter output;
-//		List<Room> list;
+//		List<Integer> list;
+		
+		// tester
+		Client(String nickname) {
+			this.userID = this.hashCode();
+			this.nickname = nickname;
+		}
 		
 		Client(Socket socket) {
 			this.socket = socket;
-//			this.userID = ++seq;
 			this.userID = this.hashCode();
-			connections.put(userID, this);
+			connections.put(this.userID, this);
 			receive();
 		}
 		
@@ -245,17 +249,16 @@ public class Jzee_MultiRoomServer extends Application{
 		// method
 		void receive() {
 			Runnable runnable = () -> {
-				String message = "";
-				
+				// set Stream
 				try {
-					input = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-					output = new PrintWriter(socket.getOutputStream());
+					this.input = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+					this.output = new PrintWriter(socket.getOutputStream());
 				} catch (IOException e) {
 					displayText("Stream Create Error");
 //					e.printStackTrace();
 					this.closeSocket();
 				} // try
-				
+
 				// set nickname
 				try {
 					String nickname = input.readLine();
@@ -266,7 +269,11 @@ public class Jzee_MultiRoomServer extends Application{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+				
+				// send Room list
+				// 
 					
+				String message = "";
 				while(true) {
 					try {
 						message = input.readLine();
@@ -314,9 +321,9 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	// =================================================================
 	class Room {
-		int roomID;
-		String roomName;
-//		List<Client> list;
+		private int roomID;
+		private String roomName;
+		private List<Integer> list;
 		
 		Room(String roomName) {
 			this.roomName = roomName;
