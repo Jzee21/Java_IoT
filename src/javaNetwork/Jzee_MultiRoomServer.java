@@ -37,7 +37,8 @@ public class Jzee_MultiRoomServer extends Application{
 	private ServerSocket server;
 	
 	private Map<Integer, Room> chatrooms = new ConcurrentHashMap<Integer, Room>();
-	private Map<Integer, Client> connections = new ConcurrentHashMap<Integer, Client>();	
+	private Map<Integer, Client> connections = new ConcurrentHashMap<Integer, Client>();
+	
 	private Gson gson = new Gson();
 	
 	
@@ -437,6 +438,7 @@ public class Jzee_MultiRoomServer extends Application{
 	class Message {
 		private String code;
 		private int userID;
+		private int destID;		// destination room id
 		private String jsonData;
 		
 		// constructor
@@ -459,6 +461,11 @@ public class Jzee_MultiRoomServer extends Application{
 			this.userID = userID;
 			this.jsonData = jsonData;
 		}
+		
+		public Message(String code, int userID, int destID, String jsonData) {
+			this(code, userID, jsonData);
+			this.destID = destID;
+		}
 
 		// getter - setter
 		public String getCode() {
@@ -477,6 +484,14 @@ public class Jzee_MultiRoomServer extends Application{
 			this.userID = userID;
 		}
 
+		public int getDestID() {
+			return destID;
+		}
+
+		public void setDestID(int destID) {
+			this.destID = destID;
+		}
+
 		public String getJsonData() {
 			return jsonData;
 		}
@@ -484,10 +499,10 @@ public class Jzee_MultiRoomServer extends Application{
 		public void setJsonData(String jsonData) {
 			this.jsonData = jsonData;
 		}
-		
+
 		@Override
 		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", jsonData=" + jsonData
+			return "Message [code=" + code + ", userID=" + userID + ", destID=" + destID + ", jsonData=" + jsonData
 					+ "]";
 		}
 		
