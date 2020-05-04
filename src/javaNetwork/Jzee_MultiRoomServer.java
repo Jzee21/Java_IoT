@@ -242,7 +242,7 @@ public class Jzee_MultiRoomServer extends Application{
 			this.nickname = nickname;
 		}
 
-		void closeSocket() {
+		private void closeSocket() {
 			String addr = socket.getInetAddress().toString();
 //			displayText("[" + addr + "] cleaning...");
 			try {
@@ -259,7 +259,7 @@ public class Jzee_MultiRoomServer extends Application{
 		}
 		
 		// method
-		void receive() {
+		private void receive() {
 			Runnable runnable = () -> {
 				// set Stream
 				try {
@@ -314,7 +314,7 @@ public class Jzee_MultiRoomServer extends Application{
 			executor.submit(runnable);
 		} // receive()
 		
-		void send(String message) {
+		public void send(String message) {
 			Runnable runnable = () -> {
 				try {
 //					displayText("send() : " + message);
@@ -328,7 +328,7 @@ public class Jzee_MultiRoomServer extends Application{
 			executor.submit(runnable);
 		} // send()
 		
-		void send(Message message) {
+		public void send(Message message) {
 			Runnable runnable = () -> {
 				String jsonMsg = gson.toJson(message);
 				output.println(jsonMsg);
@@ -435,37 +435,37 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	// =================================================================
 	class Message {
-		private int code;
+		private String code;
 		private int userID;
-		private int targetID;
 		private String jsonData;
 		
-		public Message(String jsonData) {
+		// constructor
+		public Message(String code) {
+			this.code = code;
+		}
+		
+		public Message(String code, int userID) {
+			this.code = code;
+			this.userID = userID;
+		}
+		
+		public Message(String code, String jsonData) {
+			this.code = code;
 			this.jsonData = jsonData;
 		}
 		
-		public Message(int code, int userID, int targetID) {
+		public Message(String code, int userID, String jsonData) {
 			this.code = code;
 			this.userID = userID;
-			this.targetID = targetID;
-		}
-		
-		public Message(int code, int userID, String jsonData) {
-			this.code = code;
-			this.userID = userID;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(int code, int userID, int targetID, String jsonData) {
-			this(code, userID, targetID);
 			this.jsonData = jsonData;
 		}
 
-		public int getCode() {
+		// getter - setter
+		public String getCode() {
 			return code;
 		}
 
-		public void setCode(int code) {
+		public void setCode(String code) {
 			this.code = code;
 		}
 
@@ -475,14 +475,6 @@ public class Jzee_MultiRoomServer extends Application{
 
 		public void setUserID(int userID) {
 			this.userID = userID;
-		}
-
-		public int getTargetID() {
-			return targetID;
-		}
-
-		public void setTargetID(int targetID) {
-			this.targetID = targetID;
 		}
 
 		public String getJsonData() {
@@ -495,10 +487,10 @@ public class Jzee_MultiRoomServer extends Application{
 		
 		@Override
 		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
+			return "Message [code=" + code + ", userID=" + userID + ", jsonData=" + jsonData
 					+ "]";
 		}
 		
-	}
+	} // class Message
 
 }

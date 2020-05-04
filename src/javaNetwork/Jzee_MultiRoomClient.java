@@ -346,7 +346,7 @@ public class Jzee_MultiRoomClient extends Application{
 	public void send(String message) {
 		
 		if(message != null && !message.equals(""))
-			send(new Message(0x000101, userID, message));
+			send(new Message("MESSAGE", userID, message));
 
 	} // send(String message)
 	
@@ -492,37 +492,37 @@ public class Jzee_MultiRoomClient extends Application{
 	
 	// =================================================================
 	class Message {
-		private int code;
+		private String code;
 		private int userID;
-		private int targetID;
 		private String jsonData;
 		
-		public Message(String jsonData) {
+		// constructor
+		public Message(String code) {
+			this.code = code;
+		}
+		
+		public Message(String code, int userID) {
+			this.code = code;
+			this.userID = userID;
+		}
+		
+		public Message(String code, String jsonData) {
+			this.code = code;
 			this.jsonData = jsonData;
 		}
 		
-		public Message(int code, int userID, int targetID) {
+		public Message(String code, int userID, String jsonData) {
 			this.code = code;
 			this.userID = userID;
-			this.targetID = targetID;
-		}
-		
-		public Message(int code, int userID, String jsonData) {
-			this.code = code;
-			this.userID = userID;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(int code, int userID, int targetID, String jsonData) {
-			this(code, userID, targetID);
 			this.jsonData = jsonData;
 		}
 
-		public int getCode() {
+		// getter - setter
+		public String getCode() {
 			return code;
 		}
 
-		public void setCode(int code) {
+		public void setCode(String code) {
 			this.code = code;
 		}
 
@@ -534,14 +534,6 @@ public class Jzee_MultiRoomClient extends Application{
 			this.userID = userID;
 		}
 
-		public int getTargetID() {
-			return targetID;
-		}
-
-		public void setTargetID(int targetID) {
-			this.targetID = targetID;
-		}
-
 		public String getJsonData() {
 			return jsonData;
 		}
@@ -549,10 +541,10 @@ public class Jzee_MultiRoomClient extends Application{
 		public void setJsonData(String jsonData) {
 			this.jsonData = jsonData;
 		}
-
+		
 		@Override
 		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", targetID=" + targetID + ", jsonData=" + jsonData
+			return "Message [code=" + code + ", userID=" + userID + ", jsonData=" + jsonData
 					+ "]";
 		}
 		
