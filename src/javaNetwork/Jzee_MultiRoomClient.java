@@ -7,7 +7,9 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +59,11 @@ public class Jzee_MultiRoomClient extends Application{
 	private PrintWriter output;
 	private ExecutorService receiverPool;
 	private ExecutorService senderPool;
+	
+	private Map<Integer, Client> users;
+	private Map<Integer, Room> rooms;
+	
+	private Room currentRoom;
 	
 	private Gson gson = new Gson();
 	
@@ -233,6 +240,8 @@ public class Jzee_MultiRoomClient extends Application{
 		disconnBtn.setDisable(false);
 		receiverPool = Executors.newFixedThreadPool(1);
 		senderPool = Executors.newFixedThreadPool(1);
+		users = new HashMap<Integer, Client>();
+		rooms = new HashMap<Integer, Room>();
 		
 		Runnable runnable = () -> {
 			try {
@@ -331,7 +340,17 @@ public class Jzee_MultiRoomClient extends Application{
 					// Server's socket closed
 					throw new IOException();
 				} else {
-					displayText(message);
+//					displayText(message);
+					Message data = gson.fromJson(message, Message.class);
+					
+					switch (data.getCode()) {
+					case "MESSAGE":
+						displayText(data.getJsonData());
+						break;
+
+					default:
+						break;
+					}
 				}
 //				System.out.println("receive loop end");
 			} catch (IOException e) {
@@ -394,29 +413,35 @@ public class Jzee_MultiRoomClient extends Application{
 			this.nickname = nickname;
 		}
 		
-	}
+	} // Client
 	
 	
 	// =================================================================
 	class Room {
 		private int roomID;
 		private String roomName;
-		private TextArea ta;
-		private List<Client> list;
+		private TextArea textArea;
+		private List<String> list;		// participants(id) list
+		
+		// constructor
+		public Room(TextArea textArea) {
+			this.textArea = textArea;
+		}
 		
 		public Room(int roomID, String roomName) {
 			this.roomID = roomID;
 			this.roomName = roomName;
-			this.ta = new TextArea();
-			this.list = new ArrayList<Client>();
+			this.textArea = new TextArea();
+			this.list = new ArrayList<String>();
 		}
 		
 		public Room(RoomForm form) {
 			this.roomID = form.roomID;
 			this.roomName = form.roomName;
-			this.ta = new TextArea();
+			this.textArea = new TextArea();
 		}
 		
+		// getter - setter
 		public int getRoomID() {
 			return roomID;
 		}
@@ -433,33 +458,33 @@ public class Jzee_MultiRoomClient extends Application{
 			this.roomName = roomName;
 		}
 		
-		public TextArea getTa() {
-			return ta;
+		public TextArea getTextArea() {
+			return textArea;
 		}
 		
-		public List<Client> getList() {
-			return list;
-		}
-		
-		public void addPart(Client client) {
-			this.list.add(client);
-		}
-		
-		public void addParts(List<Client> list) {
-			for(Client client : list) {
-				this.list.add(client);
-			}
-		}
-		
-		public void removePart(Client client) {
-			for(Client c : list) {
-				if(c.getNickname().equals(client.getNickname())) {
-					this.list.remove(c);
-				}
-			}
-		}
+//		public List<String> getList() {
+//			return list;
+//		}
+//		
+//		public void addPart(String id) {
+//			this.list.add(id);
+//		}
+//		
+//		public void addParts(List<String> list) {
+//			for(String id : list) {
+//				this.list.add(id);
+//			}
+//		}
+//		
+//		public void removePart(Client client) {
+//			for(Client c : list) {
+//				if(c.getNickname().equals(client.getNickname())) {
+//					this.list.remove(c);
+//				}
+//			}
+//		}
 		 
-	}
+	} // Room
 	
 	
 	
@@ -486,7 +511,7 @@ public class Jzee_MultiRoomClient extends Application{
 			this.roomName = roomName;
 		}
 		
-	}
+	} // RoomForm
 	
 	
 	
@@ -494,6 +519,7 @@ public class Jzee_MultiRoomClient extends Application{
 	class Message {
 		private String code;
 		private int userID;
+		private int destID;		// destination room id
 		private String jsonData;
 		
 		// constructor
@@ -516,6 +542,11 @@ public class Jzee_MultiRoomClient extends Application{
 			this.userID = userID;
 			this.jsonData = jsonData;
 		}
+		
+		public Message(String code, int userID, int destID, String jsonData) {
+			this(code, userID, jsonData);
+			this.destID = destID;
+		}
 
 		// getter - setter
 		public String getCode() {
@@ -534,6 +565,14 @@ public class Jzee_MultiRoomClient extends Application{
 			this.userID = userID;
 		}
 
+		public int getDestID() {
+			return destID;
+		}
+
+		public void setDestID(int destID) {
+			this.destID = destID;
+		}
+
 		public String getJsonData() {
 			return jsonData;
 		}
@@ -541,10 +580,10 @@ public class Jzee_MultiRoomClient extends Application{
 		public void setJsonData(String jsonData) {
 			this.jsonData = jsonData;
 		}
-		
+
 		@Override
 		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", jsonData=" + jsonData
+			return "Message [code=" + code + ", userID=" + userID + ", destID=" + destID + ", jsonData=" + jsonData
 					+ "]";
 		}
 		
