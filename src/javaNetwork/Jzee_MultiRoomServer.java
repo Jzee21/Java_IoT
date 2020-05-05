@@ -297,11 +297,36 @@ public class Jzee_MultiRoomServer extends Application{
 							throw new IOException("Client Closed");
 						} else {
 							Message data = gson.fromJson(message, Message.class);
+							displayText("[" + data.getUserID() + "] : " + data.getCode());
 							
-							for(Integer key : connections.keySet()) {
-								Client client = connections.get(key);
-								client.send(message);
+							switch (data.getCode()) {
+							case "NICKNAME":
+								
+								break;
+								
+							case "ROOMLIST":
+								break;
+								
+							case "MESSAGE":
+								for(Integer key : connections.keySet()) {
+									Client client = connections.get(key);
+									client.send(message);
+								}
+								break;
+								
+							case "NEW_ROOM":
+								break;
+							
+							case "ENTER_ROOM":
+								break;
+								
+							case "EXIT_ROOM":
+								break;
+								
+							default:
+								break;
 							}
+							
 						}
 					} catch (IOException e) {
 						displayText("[" + socket.getInetAddress() + "] socket closed at Client");

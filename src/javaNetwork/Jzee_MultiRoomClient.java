@@ -253,11 +253,13 @@ public class Jzee_MultiRoomClient extends Application{
 				
 				// send nickname
 				String nickname = nameField.getText();
-				output.println(nickname);
+//				output.println(nickname);
+				output.println(new Message("NICKNAME", nickname));
 				output.flush();
 				
-				// set Room list
-//				String roomsData = input.readLine();
+				// request Room list
+//				output.println(new Message("ROOMLIST", userID));
+//				output.flush();
 				
 			} catch (Exception e) {	
 //				System.out.println("Connection Exception");
@@ -344,8 +346,29 @@ public class Jzee_MultiRoomClient extends Application{
 					Message data = gson.fromJson(message, Message.class);
 					
 					switch (data.getCode()) {
+					case "NICKNAME":
+						userID = data.userID;
+						break;
+						
+					case "ROOMLIST":
+						//
+						break;
+					
 					case "MESSAGE":
-						displayText(data.getJsonData());
+						if(data.userID == userID) {
+							displayText("[ 나 ] : " + data.getJsonData());
+						} else {
+							displayText("[ " + "남" + " ] : " + data.getJsonData());
+						}
+						break;
+						
+					case "NEW_ROOM":
+						break;
+						
+					case "ENTER_ROOM":
+						break;
+						
+					case "EXIT_ROOM":
 						break;
 
 					default:
