@@ -281,11 +281,11 @@ public class Jzee_ChatClient extends Application{
 				
 				String line = "";
 				while((line = input.readLine()) != null) {
-					Message data = gson.fromJson(line, Message.class);
+					ChatMessage data = gson.fromJson(line, ChatMessage.class);
 					
 					switch (data.getCode()) {
 					case "MESSAGE":
-						displayText("[ 나  ] : " + data.getJsonData());
+						displayText("[ 나  ] : " + data.getStringData());
 						break;
 
 					default:

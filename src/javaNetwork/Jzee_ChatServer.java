@@ -226,7 +226,7 @@ class ServerInfo {
 		}
 	}
 	
-	public void broadcast(Message message) {
+	public void broadcast(ChatMessage message) {
 		this.broadcast(gson.toJson(message));
 	}
 	
@@ -297,7 +297,7 @@ class RunnableClient implements Runnable {
 		String line = "";
 		try {
 			while((line = input.readLine()) != null) {
-				Message data = gson.fromJson(line, Message.class);
+				ChatMessage data = gson.fromJson(line, ChatMessage.class);
 				
 				switch (data.getCode()) {
 				case "MESSAGE":
