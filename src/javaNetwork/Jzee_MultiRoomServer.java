@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,15 +72,8 @@ public class Jzee_MultiRoomServer extends Application{
 		stopBtn = new Button("Server Stop");
 		stopBtn.setPrefSize(200, 40);
 		stopBtn.setOnAction((event) -> {
-			System.out.println("### StopBtn call stopServer()");
 //			stopServer();
 			if(stopServer()) { displayText("##### Server Stoped #####"); }
-//			try {
-//				server.close();
-//				executor.shutdownNow();
-//			} catch (IOException e1) {
-////				e1.printStackTrace();
-//			}
 		});
 		
 		FlowPane bottom = new FlowPane();
@@ -137,24 +131,17 @@ public class Jzee_MultiRoomServer extends Application{
 			Socket socket = null;
 			while(true) {
 				try {
-//					displayText("Ready to accept()");
 					socket = server.accept();
 					displayText("[" + socket.getInetAddress() + "] Client Connected");
 					Client client = new Client(socket);
-//					displayText("[" + socket.getInetAddress() + "] id : " + client.userID);
-//					connections.put(client.userID, client);
 				} catch (SocketTimeoutException e) {	
-//					System.out.println("Accept() SocketTimeoutException");
 					if(Thread.interrupted()) {
-//						System.out.println("Accept() interrupted");
 						break;
 					} else continue;
 				} catch (IOException e) {
-//					System.out.println("Accept() IOException");
 					break;
 				} // try				
 			} // while
-//			System.out.println("### startServer() call-02 stopServer()");
 			stopServer();
 		}; // runnable
 		executor.submit(runnable);
@@ -165,64 +152,73 @@ public class Jzee_MultiRoomServer extends Application{
 	} // startServer() 
 	
 	public boolean stopServer() {
-//		System.out.println("stopServer()");
 		try {
 			for(Integer key : connections.keySet()) {
 				Client client = connections.get(key);
-				client.socket.close();
+				client.closeSocket();
 				connections.remove(key);
 			}
-//			System.out.println("stopServer() connections close");
 			if(server != null && !server.isClosed()) {
 				server.close();
-//				System.out.println("stopServer() server close 1");
 			}
-//			System.out.println("stopServer() server close 2");
 			if(executor != null && !executor.isShutdown()) {
 				executor.shutdown();
 				do { 
-//					System.out.println("Pool Running.... {}" + executor.isTerminated());
 					// 작업이 완료되었으면 즉시 정지 한다. 
 					if (executor.isTerminated()) {
-//						System.out.println("Running....2 {}" + executor.isTerminated());
 						executor.shutdownNow();
 					}
 					// 지정된 시간 별로(10초단위) 작업이 모든 작업이 중지되었는지 체크
 					// 작업이 완료되었으면 루프 해제
 				} while (!executor.awaitTermination(10, TimeUnit.SECONDS));
-//				System.out.println("stopServer() executor closed 1");
 			}
-//			System.out.println("stopServer() executor closed 2");
 		} catch (Exception e) {
-			// do nothing
-//			System.out.println("stopServer() Exception");
 			return false;
 		} finally {
 			Platform.runLater(() -> {
 				startBtn.setDisable(false);
 				stopBtn.setDisable(true);
 			});
-//			System.out.println("stopServer() set View");
 		}// try
-//		System.out.println("stopServer() finish");
 		return true;
 	} // stopServer()
 	
+	public List<ChatRoom> getRoomList() {
+
+		List<ChatRoom> list = new ArrayList<ChatRoom>();
+		
+		for(int key : chatrooms.keySet()) {
+			ChatRoom room = chatrooms.get(key);
+			list.add(room);
+		}
+		
+		return list;
+		
+	}
+	
+	public List<ChatClient> getRoomPartList(int roomID) {
+		
+		List<ChatClient> list = new ArrayList<ChatClient>();
+		
+		Room room = chatrooms.get(roomID);
+		for(int key : room.getList()) {
+			ChatClient part = connections.get(key);
+			list.add(part);
+		}
+		
+		return list;
+	}
+	
 	
 	// =================================================================
-	class Client {
-		private int userID;
-		private String nickname;
+	class Client extends ChatClient {
+//		int userID;
+//		String nickname;
 		private Socket socket;
 		private BufferedReader input;
 		private PrintWriter output;
-//		List<Integer> list;
-		
-		// tester
-		public Client(String nickname) {
-			this.userID = this.hashCode();
-			this.nickname = nickname;
-		}
+		List<Integer> roomlist;
+
 		
 		public Client(Socket socket) {
 			this.socket = socket;
@@ -230,22 +226,10 @@ public class Jzee_MultiRoomServer extends Application{
 			connections.put(this.userID, this);
 			receive();
 		}
+
 		
-		public int getUserID() {
-			return userID;
-		}
-
-		public String getNickname() {
-			return nickname;
-		}
-
-		public void setNickname(String nickname) {
-			this.nickname = nickname;
-		}
-
-		private void closeSocket() {
+		public void closeSocket() {
 			String addr = socket.getInetAddress().toString();
-//			displayText("[" + addr + "] cleaning...");
 			try {
 				if(socket != null && !socket.isClosed()) {
 					socket.close();
@@ -273,54 +257,122 @@ public class Jzee_MultiRoomServer extends Application{
 				} // try
 
 				// set nickname
-				try {
-					String nickname = input.readLine();
-					this.nickname = nickname;
-					displayText("[" + socket.getInetAddress() + "] id : " + this.userID);
-					displayText("[" + socket.getInetAddress() + "] nickname : " + this.nickname);
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+//				try {
+//					String nickname = input.readLine();
+//					this.nickname = nickname;
+//					displayText("[" + socket.getInetAddress() + "] id : " + this.userID);
+//					displayText("[" + socket.getInetAddress() + "] nickname : " + this.nickname);
+//				} catch (IOException e1) {
+//					e1.printStackTrace();
+//				}
 				
 				// send Room list
 				// 
 					
-				String message = "";
+				String line = "";
 				while(true) {
 					try {
-						message = input.readLine();
+						line = input.readLine();
+						displayText(line);
 						/*	when client socket is closed*, method readLine return null*
 						 * 	and, Gson.fromJson(null, class) >> return null*					*/
 //						displayText("receive : " + message);
-						if(message == null) {
+						if(line == null) {
 							throw new IOException("Client Closed");
 						} else {
-							Message data = gson.fromJson(message, Message.class);
-							displayText("[" + data.getUserID() + "] : " + data.getCode());
+							ChatMessage data = gson.fromJson(line, ChatMessage.class);
+							displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
 							
+							Room targetRoom = null;
 							switch (data.getCode()) {
+							case "FIRST" :
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"FIRST", 0, 0, "nickname"}	// set first
+								this.nickname = data.getStringData();
+								data.setUserID(this.userID);
+								data.setStringData(gson.toJson(getRoomList()));
+								send(data);
+								break;
+							
 							case "NICKNAME":
-								
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"NICKNAME", userID, 0, "nickname"}	// rename
+								this.nickname = data.getStringData();
+								send(data);
 								break;
 								
 							case "ROOMLIST":
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"ROOMLIST", userID, 0, null}
+								data.setStringData(gson.toJson(getRoomList()));
+								send(data);
 								break;
 								
 							case "MESSAGE":
-								for(Integer key : connections.keySet()) {
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"MESSAGE", userID, roomID, "message"}
+								// broadcast(by roomID)
+								targetRoom = chatrooms.get(data.getDestID());
+								for(int key : targetRoom.getList()) {
 									Client client = connections.get(key);
-									client.send(message);
+									client.send(line);
 								}
+//								for(Integer key : connections.keySet()) {
+//									Client client = connections.get(key);
+//									client.send(line);
+//								}
 								break;
 								
 							case "NEW_ROOM":
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"NEW_ROOM", userID, 0, "roomName"}
+								// new Room
+								targetRoom = new Room(data.getStringData());
+								// add this client
+								targetRoom.addPart(data.getUserID());
+								chatrooms.put(targetRoom.getRoomID(), targetRoom);
+								
+								// broadcast(all connections)
+								// all roomList
+								data.setStringData(gson.toJson(getRoomList()));
+								for(Integer key : connections.keySet()) {
+									Client client = connections.get(key);
+									client.send(data);
+								}
+								
+								// Send a second message to the client who created the room
+								ChatRoom roomInfo = targetRoom;
+								data.setDestID(data.getUserID());
+								data.setStringData(gson.toJson(roomInfo));
+								send(data);
 								break;
 							
 							case "ENTER_ROOM":
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"ENTER_ROOM", userID, roomID, null}
+								// broadcast(by roomID)
+								targetRoom = chatrooms.get(data.getDestID());
+								data.setStringData(gson.toJson(new ChatClient(this)));	// Newly joined clients info
+								for(int key : targetRoom.getList()) {
+									Client client = connections.get(key);
+									client.send(data);
+								}
+								
+								// Send a second message to the client who created the room
+								data.setStringData(gson.toJson(getRoomPartList(data.getDestID())));
+								send(data);
 								break;
 								
 							case "EXIT_ROOM":
+								displayText("[" + socket.getInetAddress() + "] : " + data.getCode());
+								// data = {"EXIT_ROOM", userID, roomID, null}
+								// broadcast(by roomID)
+								targetRoom = chatrooms.get(data.getDestID());
+								data.setStringData(gson.toJson(new ChatClient(this)));
+								for(int key : targetRoom.getList()) {
+									Client client = connections.get(key);
+									client.send(data);
+								}
 								break;
 								
 							default:
@@ -354,7 +406,7 @@ public class Jzee_MultiRoomServer extends Application{
 			executor.submit(runnable);
 		} // send()
 		
-		public void send(Message message) {
+		public void send(ChatMessage message) {
 			Runnable runnable = () -> {
 				String jsonMsg = gson.toJson(message);
 				output.println(jsonMsg);
@@ -368,39 +420,9 @@ public class Jzee_MultiRoomServer extends Application{
 	
 	
 	// =================================================================
-	class ClientForm {
-		int userID;
-		String nickname;
-		
-		ClientForm(Client client) {
-			this.userID = client.getUserID();
-			this.nickname = client.getNickname();
-		}
-		
-		public int getUserID() {
-			return userID;
-		}
-		
-		public void setUserID(int userID) {
-			this.userID = userID;
-		}
-		
-		public String getNickname() {
-			return nickname;
-		}
-		
-		public void setNickname(String nickname) {
-			this.nickname = nickname;
-		}
-		
-	}
-	
-	
-	
-	// =================================================================
-	class Room {
-		private int roomID;
-		private String roomName;
+	class Room extends ChatRoom {
+//		int roomID;
+//		String roomName;
 		private List<Integer> list;
 		
 		Room(String roomName) {
@@ -408,17 +430,6 @@ public class Jzee_MultiRoomServer extends Application{
 			this.roomID = this.hashCode();
 		}
 
-		public int getRoomID() {
-			return roomID;
-		}
-
-		public String getRoomName() {
-			return roomName;
-		}
-
-		public void setRoomName(String roomName) {
-			this.roomName = roomName;
-		}
 
 		public List<Integer> getList() {
 			return list;
@@ -428,109 +439,14 @@ public class Jzee_MultiRoomServer extends Application{
 			this.list = list;
 		}
 		
-	}
-		
-	
-	
-	// =================================================================
-	class RoomForm {
-		int roomID;
-		String roomName;
-		
-		RoomForm(Room room) {
-			this.roomID = room.getRoomID();
-			this.roomName = room.getRoomName();
+		public void addPart(int clientID) {
+			this.list.add(clientID);
 		}
 		
-		public int getRoomID() {
-			return roomID;
-		}
-		public void setRoomID(int roomID) {
-			this.roomID = roomID;
-		}
-		public String getRoomName() {
-			return roomName;
-		}
-		public void setRoomName(String roomName) {
-			this.roomName = roomName;
+		public void deletePart(int clientID) {
+			this.list.remove(clientID);
 		}
 		
 	}
-	
-	
-	
-	// =================================================================
-	class Message {
-		private String code;
-		private int userID;
-		private int destID;		// destination room id
-		private String jsonData;
-		
-		// constructor
-		public Message(String code) {
-			this.code = code;
-		}
-		
-		public Message(String code, int userID) {
-			this.code = code;
-			this.userID = userID;
-		}
-		
-		public Message(String code, String jsonData) {
-			this.code = code;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(String code, int userID, String jsonData) {
-			this.code = code;
-			this.userID = userID;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(String code, int userID, int destID, String jsonData) {
-			this(code, userID, jsonData);
-			this.destID = destID;
-		}
-
-		// getter - setter
-		public String getCode() {
-			return code;
-		}
-
-		public void setCode(String code) {
-			this.code = code;
-		}
-
-		public int getUserID() {
-			return userID;
-		}
-
-		public void setUserID(int userID) {
-			this.userID = userID;
-		}
-
-		public int getDestID() {
-			return destID;
-		}
-
-		public void setDestID(int destID) {
-			this.destID = destID;
-		}
-
-		public String getJsonData() {
-			return jsonData;
-		}
-
-		public void setJsonData(String jsonData) {
-			this.jsonData = jsonData;
-		}
-
-		@Override
-		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", destID=" + destID + ", jsonData=" + jsonData
-					+ "]";
-		}
-		
-	} // class Message
 
 }

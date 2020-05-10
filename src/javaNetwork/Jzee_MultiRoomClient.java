@@ -7,9 +7,11 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,8 @@ import javafx.stage.Stage;
 public class Jzee_MultiRoomClient extends Application{
 	
 	// UI
+	private Stage window;
+	
 	private BorderPane root;
 	private FlowPane namePane, menuPane, inputPane;
 	
@@ -60,8 +64,11 @@ public class Jzee_MultiRoomClient extends Application{
 	private ExecutorService receiverPool;
 	private ExecutorService senderPool;
 	
-	private Map<Integer, Client> users;
-	private Map<Integer, Room> rooms;
+//	private Map<Integer, Client> users;
+//	private Map<Integer, Room> rooms;
+	private Map<Integer, ChatClient> users;		// nickname, key
+	private Map<Integer, Room> rooms;		// roomID, Room.class
+	private Map<String, Integer> roomNames;	// roomName, roomID
 	
 	private Room currentRoom;
 	
@@ -90,6 +97,49 @@ public class Jzee_MultiRoomClient extends Application{
 		pane.setHgap(10);
 	}
 	
+//	private Map<Integer, ChatClient> users;		// nickname, key
+//	private Map<Integer, Room> rooms;		// roomID, Room.class
+//	private Map<String, Integer> roomNames;	// roomName, roomID
+	
+//	public Room(ChatRoom form) {
+//		this(form.getRoomID(), form.getRoomName());
+//	}
+	
+	public void setRoomList(List<ChatRoom> list) {
+		roomListView.getItems().clear();
+		for(ChatRoom room : list) {
+			if(!rooms.containsKey(room.getRoomID())) {
+				Room newRoom = new Room(room);
+				rooms.put(newRoom.getRoomID(), newRoom);
+				roomNames.put(newRoom.getRoomName(), newRoom.getRoomID());
+			}
+			roomListView.getItems().add(room.getRoomName());
+		}
+	}
+	
+	public void setRoomPartList(List<ChatClient> list) {
+		participantsListView.getItems().clear();
+		if(list != null) {
+			for(ChatClient part : list) {
+				if(!users.containsKey(part.getUserID())) {
+					users.put(part.getUserID(), part);
+				}
+				participantsListView.getItems().add(part.getNickname());
+			}
+		}
+	}
+	
+	public void setCurrentRoom(Room room) {
+		currentRoom = room;
+		currentRoom.setUpdateFlag(true);
+		if(currentRoom == null) {
+			root.setCenter(textarea);
+			window.setTitle("Multi Room Chat Client");
+		} else {
+			window.setTitle(room.getRoomName());
+		}
+	}
+	
 	
 	// =================================================================
 	@Override
@@ -109,7 +159,9 @@ public class Jzee_MultiRoomClient extends Application{
 		roomListView = new ListView<String>();
 		roomListView.getSelectionModel().selectedItemProperty().addListener(
 				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
-					int index = roomListView.getSelectionModel().getSelectedIndex();
+//					int index = roomListView.getSelectionModel().getSelectedIndex();
+					String item = roomListView.getSelectionModel().getSelectedItem();
+					send(new ChatMessage("ENTER_ROOM", userID, roomNames.get(item)));
 					Platform.runLater(() -> {
 //						root.setCenter(taList.get(index));
 						inputField.setEditable(true);
@@ -118,10 +170,10 @@ public class Jzee_MultiRoomClient extends Application{
 		
 		// participantsList
 		participantsListView = new ListView<String>();
-		participantsListView.getSelectionModel().selectedItemProperty().addListener(
-				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
-					int index = participantsListView.getSelectionModel().getSelectedIndex();
-				});
+//		participantsListView.getSelectionModel().selectedItemProperty().addListener(
+//				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
+//					int index = participantsListView.getSelectionModel().getSelectedIndex();
+//				});
 		
 		// Right GridPane
 		GridPane gridpane = new GridPane();
@@ -153,6 +205,10 @@ public class Jzee_MultiRoomClient extends Application{
 		connBtn.setPrefSize(150, 40);
 		connBtn.setOnAction((e) -> {
 			startClient();
+//			displayText("send nickname");
+			// send nickname -- response id, roomList
+			String nickname = nameField.getText();
+			send(new ChatMessage("FIRST", nickname));
 			Platform.runLater(() -> {
 				root.setBottom(menuPane);
 			});
@@ -178,6 +234,19 @@ public class Jzee_MultiRoomClient extends Application{
 		createBtn = new Button("Create Room");
 		createBtn.setPrefSize(150, 40);
 		createBtn.setOnAction((e) -> {
+			// Enter Room Name - Dialog
+			Dialog<String> dialog = new TextInputDialog("Please Enter Room Name");
+			dialog.setTitle("Room Setting");
+			dialog.setHeaderText("Room Name Setting. Please Enter Room Name");
+			
+			Optional<String> result = dialog.showAndWait();
+			String entered = "";
+			if(result.isPresent()) {
+				// Nickname 입력, 확인버튼
+				entered = result.get();
+			}
+			
+			send(new ChatMessage("NEW_ROOM", userID, 0, entered));
 			Platform.runLater(() -> {
 				root.setBottom(inputPane);
 				inputField.setEditable(true);
@@ -193,6 +262,7 @@ public class Jzee_MultiRoomClient extends Application{
 		menuBtn.setOnAction((e) -> {
 			Platform.runLater(() -> {
 				root.setBottom(menuPane);
+				setCurrentRoom(null);
 			});
 		});
 		
@@ -200,8 +270,15 @@ public class Jzee_MultiRoomClient extends Application{
 		inputField.setEditable(false);
 		inputField.setPrefSize(500, 40);
 		inputField.setOnAction((e) -> {
-			send(inputField.getText());
+//			send(inputField.getText());
 //			displayText(inputField.getText());
+
+			String text = inputField.getText();
+			if(text.equals("@EXIT")) {
+				send(new ChatMessage("EXIT_ROOM", userID, currentRoom.getRoomID()));
+			} else {
+				send(new ChatMessage("MESSAGE", userID, currentRoom.getRoomID(), text));
+			}
 			Platform.runLater(() -> {
 				inputField.clear();
 			});
@@ -217,7 +294,6 @@ public class Jzee_MultiRoomClient extends Application{
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Multi Room Chat Client");
 		primaryStage.setOnCloseRequest((e) -> {
-			System.out.println("closeBtn call stopClient()");
 //			stopClient("CloseBtn");
 			stopClient();
 		});
@@ -240,8 +316,9 @@ public class Jzee_MultiRoomClient extends Application{
 		disconnBtn.setDisable(false);
 		receiverPool = Executors.newFixedThreadPool(1);
 		senderPool = Executors.newFixedThreadPool(1);
-		users = new HashMap<Integer, Client>();
+		users = new HashMap<Integer, ChatClient>();
 		rooms = new HashMap<Integer, Room>();
+		roomNames = new HashMap<String, Integer>();
 		
 		Runnable runnable = () -> {
 			try {
@@ -251,134 +328,153 @@ public class Jzee_MultiRoomClient extends Application{
 				output = new PrintWriter(socket.getOutputStream());
 				displayText("[Connected : " + socket.getRemoteSocketAddress() + "]");
 				
-				// send nickname
-				String nickname = nameField.getText();
-//				output.println(nickname);
-				output.println(new Message("NICKNAME", nickname));
-				output.flush();
-				
-				// request Room list
-//				output.println(new Message("ROOMLIST", userID));
-//				output.flush();
-				
 			} catch (Exception e) {	
-//				System.out.println("Connection Exception");
 				if(!socket.isClosed()) { 
-//					System.out.println("Connecter call stopClient()");
-//					stopClient("Connecter");
 					stopClient();
 				}
-//				System.out.println("Connecter return");
 				return;
 			}
-//			System.out.println("Connecter start receiver");
 			receive();
 		};
-//		System.out.println("out of runnable");
 		receiverPool.submit(runnable);
-//		System.out.println("pool.submit(runnable)");
 	} // startClient()
 	
 	public void stopClient() {
-//	public void stopClient(String who) {
-//		System.out.println(who + "] stopClient() start");
 		try {
+			displayText("test1");
 			if(socket != null && !socket.isClosed()) {
 				socket.close();
-//				System.out.println(who + "] stopClient() socket close");
 				if(input != null) input.close();
 				if(output != null) output.close();
-//				System.out.println(who + "] stopClient() stream close");
 				displayText("[ Disconnected ]");
 			}
-//			System.out.println(who + "] stopClient() socket clean");
+			displayText("test2");
 			if(receiverPool != null && !receiverPool.isShutdown()) {
 				List<Runnable> list = receiverPool.shutdownNow();
-//				System.out.println("reveiver ] " + list.size() + " is until running...");
 //				receiverPool.shutdown();
 //				do {
 //					if(receiverPool.isTerminated()) {
 //						receiverPool.shutdownNow();
 //					}
 //				} while (!receiverPool.awaitTermination(10, TimeUnit.SECONDS));
-//				System.out.println(who + "] stopClient() receiver pool close");
 			}
-//			System.out.println(who + "] stopClient() receiver pool clean");
+			displayText("test3");
 			if(senderPool != null && !senderPool.isShutdown()) {
 				List<Runnable> list = senderPool.shutdownNow();
-//				System.out.println("sender ] " + list.size() + " is until running...");
 //				senderPool.shutdown();
 //				do {
 //					if(senderPool.isTerminated()) {
 //						senderPool.shutdownNow();
 //					}
 //				} while (!senderPool.awaitTermination(10, TimeUnit.SECONDS));
-//				System.out.println(who + "] stopClient() sender pool close");
 			}
-//			System.out.println(who + "] stopClient() sender pool clean");
+			displayText("test4");
 		} catch (Exception e) {
-//			System.out.println(who + "] stopClient() Exception");
 			displayText("[ Disconnection Error ]");
 			e.printStackTrace();
-		} finally {
-			Platform.runLater(() -> {
-				connBtn.setDisable(false);
-				disconnBtn.setDisable(true);
-				root.setBottom(namePane);
-			});
-		} // try
-//		System.out.println(who + "] stopClient() finish");
+		}
+		displayText("test5");
+		Platform.runLater(() -> {
+			connBtn.setDisable(false);
+			disconnBtn.setDisable(true);
+			root.setBottom(namePane);
+		});
+		displayText("test6");
+		
 	} // stopClient()
 	
 	// ---------------------------------------------------
 	public void receive() {
-//		System.out.println("receive");
-		String message = "";
+		String line = "";
 		while(true) {
 			try {
-//				System.out.println("receive running...");
-				message = input.readLine();
-				if(message == null) {
+				line = input.readLine();
+				displayText(line);
+				if(line == null) {
 					// Server's socket closed
 					throw new IOException();
 				} else {
-//					displayText(message);
-					Message data = gson.fromJson(message, Message.class);
+					ChatMessage data = gson.fromJson(line, ChatMessage.class);
 					
 					switch (data.getCode()) {
+					case "FIRST" :
+						// data = {"FIRST", userID, 0, [{roomID, roomName}, ...]}	// ArrayList
+						userID = data.getUserID();
+						ChatRoom[] firstArray = gson.fromJson(data.getStringData(), ChatRoom[].class);
+//						List<ChatRoom> list = Arrays.asList(array);
+						setRoomList(Arrays.asList(firstArray));
+						break;
+					
 					case "NICKNAME":
-						userID = data.userID;
+						// data = {"NICKNAME", userID, 0, "nickname"}
+						userID = data.getUserID();
 						break;
 						
 					case "ROOMLIST":
-						//
+						// data = {"ROOMLIST", userID, 0, [{roomID, roomName}, ...]}	// ArrayList
+						ChatRoom[] roomList = gson.fromJson(data.getStringData(), ChatRoom[].class);
+						setRoomList(Arrays.asList(roomList));
 						break;
 					
 					case "MESSAGE":
-						if(data.userID == userID) {
-							displayText("[ 나 ] : " + data.getJsonData());
+						// data = {"MESSAGE", userID, roomID, "message"}
+						String who = "";
+						if(data.getUserID() == userID) {
+							who = "나";
 						} else {
-							displayText("[ " + "남" + " ] : " + data.getJsonData());
+							who = users.get(data.getUserID()).getNickname();
 						}
+						rooms.get(data.getDestID()).displayText("[ " + who + " ] : " + data.getStringData());
 						break;
 						
 					case "NEW_ROOM":
+						// The first message goes to else
+						if (data.getDestID() == userID) {
+							// When this client creates a room, it receives a second message.
+							// data = {"NEW_ROOM", userID, userID, [{roomID, roomName}]}
+							ChatRoom roomData = gson.fromJson(data.getStringData(), ChatRoom.class);
+							setCurrentRoom(rooms.get(roomData.getRoomID()));
+						} else {
+							// data = {"NEW_ROOM", userID, 0, [{roomID, roomName}, ...]}
+							ChatRoom[] newRoomList = gson.fromJson(data.getStringData(), ChatRoom[].class);
+							setRoomList(Arrays.asList(newRoomList));
+						}
 						break;
 						
 					case "ENTER_ROOM":
+						// The first message goes to else
+						if (data.getUserID() == userID) {
+							// when this client enter the room, it receives a second message.
+							// data = {"ENTER_ROOM", userID, roomID, [{userID, nickname}, ...]}
+							ChatClient[] partList = gson.fromJson(data.getStringData(), ChatClient[].class);
+							setCurrentRoom(rooms.get(data.getDestID()));
+							setRoomPartList(Arrays.asList(partList));
+						} else {
+							// data = {"ENTER_ROOM", userID, roomID, {userID, nickname}}
+							ChatClient newPart = gson.fromJson(data.getStringData(), ChatClient.class);
+							rooms.get(data.getDestID()).addToList(newPart.getUserID());
+							rooms.get(data.getDestID()).displayText("[ " + users.get(data.getUserID()) + " ] 님이 입장하셨습니다.");
+						}
 						break;
 						
 					case "EXIT_ROOM":
+						// data = {"ENTER_ROOM", userID, roomID, {userID, nickname}}
+						if (data.getUserID() == userID) {
+							setCurrentRoom(null);
+							setRoomPartList(null);
+						} else {
+							ChatClient newPart = gson.fromJson(data.getStringData(), ChatClient.class);
+							rooms.get(data.getDestID()).removeAtList(newPart.getUserID());
+							setRoomPartList(rooms.get(data.getDestID()).getPartList());
+							rooms.get(data.getDestID()).displayText("[ " + users.get(data.getUserID()) + " ] : " + data.getStringData());
+						}
 						break;
 
 					default:
 						break;
 					}
 				}
-//				System.out.println("receive loop end");
 			} catch (IOException e) {
-//				System.out.println("receiver call stopClient()");
-//				stopClient("receive()");
 				stopClient();
 				break;
 			}
@@ -388,11 +484,11 @@ public class Jzee_MultiRoomClient extends Application{
 	public void send(String message) {
 		
 		if(message != null && !message.equals(""))
-			send(new Message("MESSAGE", userID, message));
+			send(new ChatMessage("MESSAGE", userID, message));
 
 	} // send(String message)
 	
-	public void send(Message message) {
+	public void send(ChatMessage message) {
 		Runnable runnable = () -> {
 			try {
 				String jsonMsg = gson.toJson(message);
@@ -400,216 +496,100 @@ public class Jzee_MultiRoomClient extends Application{
 				output.flush();
 			} catch (Exception e) {
 				displayText("send Error");
-//				System.out.println("send() call stopClient()");
-//				stopClient("send()");
 				stopClient();
 			}
 		};
 		senderPool.submit(runnable);
 	} // send(Message message)
-
+	
 	
 
 	// =================================================================
-	class Client {
-		private int userID;
-		private String nickname;
+	class Client extends ChatClient {
 		
 		public Client(int userID, String nickname) {
 			this.userID = userID;
 			this.nickname = nickname;
 		}
-
-		public int getUserID() {
-			return userID;
-		}
-
-		public String getNickname() {
-			return nickname;
-		}
 		
-		public void setUserID(int userID) {
-			this.userID = userID;
+		public Client(ChatClient form) {
+			this.userID = form.getUserID();
+			this.nickname = form.getNickname();
 		}
-		
-		public void setNickname(String nickname) {
-			this.nickname = nickname;
-		}
+
 		
 	} // Client
 	
 	
 	// =================================================================
-	class Room {
-		private int roomID;
-		private String roomName;
+	class Room extends ChatRoom {
 		private TextArea textArea;
-		private List<String> list;		// participants(id) list
+		private boolean updateFlag;
+		private List<Integer> list;		// participants(id) list
 		
 		// constructor
-		public Room(TextArea textArea) {
-			this.textArea = textArea;
-		}
-		
 		public Room(int roomID, String roomName) {
 			this.roomID = roomID;
 			this.roomName = roomName;
 			this.textArea = new TextArea();
-			this.list = new ArrayList<String>();
+			this.updateFlag = false;
+			this.list = new ArrayList<Integer>();
 		}
 		
-		public Room(RoomForm form) {
-			this.roomID = form.roomID;
-			this.roomName = form.roomName;
-			this.textArea = new TextArea();
+		public Room(ChatRoom form) {
+			this(form.getRoomID(), form.getRoomName());
 		}
 		
 		// getter - setter
-		public int getRoomID() {
-			return roomID;
-		}
-		
-		public void setRoomID(int roomID) {
-			this.roomID = roomID;
-		}
-		
-		public String getRoomName() {
-			return roomName;
-		}
-		
-		public void setRoomName(String roomName) {
-			this.roomName = roomName;
-		}
-		
 		public TextArea getTextArea() {
 			return textArea;
 		}
+
+		public boolean isUpdateFlag() {
+			return updateFlag;
+		}
+
+		public void setUpdateFlag(boolean updateFlag) {
+			this.updateFlag = updateFlag;
+		}
+
+		public List<Integer> getList() {
+			return list;
+		}
+
+		public void setList(List<Integer> list) {
+			this.list = list;
+		}
 		
-//		public List<String> getList() {
-//			return list;
-//		}
-//		
-//		public void addPart(String id) {
-//			this.list.add(id);
-//		}
-//		
-//		public void addParts(List<String> list) {
-//			for(String id : list) {
-//				this.list.add(id);
-//			}
-//		}
-//		
-//		public void removePart(Client client) {
-//			for(Client c : list) {
-//				if(c.getNickname().equals(client.getNickname())) {
-//					this.list.remove(c);
-//				}
-//			}
-//		}
-		 
+		//
+		public void addToList(int userID) {
+			this.list.add(userID);
+		}
+		
+		public void removeAtList(int userID) {
+			this.list.remove(userID);
+		}
+		
+		public List<ChatClient> getPartList() {
+			List<ChatClient> list = new ArrayList<ChatClient>();
+			for (int key : this.list) {
+				list.add(users.get(key));
+			}
+			return list;
+		}
+		
+		public List<String> getPartNames() {
+			List<String> list = new ArrayList<String>();
+			for (int key : this.list) {
+				list.add(users.get(key).getNickname());
+			}
+			return list;
+		}
+		
+		public void displayText(String text) {
+			if(this.updateFlag) this.textArea.appendText(text);
+		}
+		
 	} // Room
-	
-	
-	
-	// =================================================================
-	class RoomForm {
-		int roomID;
-		String roomName;
-		
-		RoomForm(Room room) {
-			this.roomID = room.getRoomID();
-			this.roomName = room.getRoomName();
-		}
-		
-		public int getRoomID() {
-			return roomID;
-		}
-		public void setRoomID(int roomID) {
-			this.roomID = roomID;
-		}
-		public String getRoomName() {
-			return roomName;
-		}
-		public void setRoomName(String roomName) {
-			this.roomName = roomName;
-		}
-		
-	} // RoomForm
-	
-	
-	
-	// =================================================================
-	class Message {
-		private String code;
-		private int userID;
-		private int destID;		// destination room id
-		private String jsonData;
-		
-		// constructor
-		public Message(String code) {
-			this.code = code;
-		}
-		
-		public Message(String code, int userID) {
-			this.code = code;
-			this.userID = userID;
-		}
-		
-		public Message(String code, String jsonData) {
-			this.code = code;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(String code, int userID, String jsonData) {
-			this.code = code;
-			this.userID = userID;
-			this.jsonData = jsonData;
-		}
-		
-		public Message(String code, int userID, int destID, String jsonData) {
-			this(code, userID, jsonData);
-			this.destID = destID;
-		}
-
-		// getter - setter
-		public String getCode() {
-			return code;
-		}
-
-		public void setCode(String code) {
-			this.code = code;
-		}
-
-		public int getUserID() {
-			return userID;
-		}
-
-		public void setUserID(int userID) {
-			this.userID = userID;
-		}
-
-		public int getDestID() {
-			return destID;
-		}
-
-		public void setDestID(int destID) {
-			this.destID = destID;
-		}
-
-		public String getJsonData() {
-			return jsonData;
-		}
-
-		public void setJsonData(String jsonData) {
-			this.jsonData = jsonData;
-		}
-
-		@Override
-		public String toString() {
-			return "Message [code=" + code + ", userID=" + userID + ", destID=" + destID + ", jsonData=" + jsonData
-					+ "]";
-		}
-		
-	} // class Message
 	
 }

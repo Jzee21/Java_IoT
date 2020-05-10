@@ -22,9 +22,13 @@ public class ChatMessage {
 	}
 	
 	public ChatMessage(String code, int userID, String stringData) {
-		this.code = code;
-		this.userID = userID;
+		this(code, userID);
 		this.stringData = stringData;
+	}
+	
+	public ChatMessage(String code, int userID, int destID) {
+		this(code, userID);
+		this.destID = destID;
 	}
 	
 	public ChatMessage(String code, int userID, int destID, String stringData) {
