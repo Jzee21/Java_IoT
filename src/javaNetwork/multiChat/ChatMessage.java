@@ -2,41 +2,23 @@ package javaNetwork.multiChat;
 
 public class ChatMessage {
 	private String code;
-	private int userID;
-	private int destID;		// destination room id
+	private String userID;
+	private String destID;		// destination room id
 	private String stringData;
 	
 	// constructor
-	public ChatMessage(String code) {
-		this.code = code;
+	public ChatMessage() {
+		this(null, null, null, null);
 	}
 	
-	public ChatMessage(String code, int userID) {
+	public ChatMessage(String code, String userID, String destID, String data) {
 		this.code = code;
 		this.userID = userID;
-	}
-	
-	public ChatMessage(String code, String stringData) {
-		this.code = code;
-		this.stringData = stringData;
-	}
-	
-	public ChatMessage(String code, int userID, String stringData) {
-		this(code, userID);
-		this.stringData = stringData;
-	}
-	
-	public ChatMessage(String code, int userID, int destID) {
-		this(code, userID);
 		this.destID = destID;
+		this.stringData = data;
 	}
-	
-	public ChatMessage(String code, int userID, int destID, String stringData) {
-		this(code, userID, stringData);
-		this.destID = destID;
-	}
-	
-	// getter - setter
+
+	// get, set
 	public String getCode() {
 		return code;
 	}
@@ -45,19 +27,19 @@ public class ChatMessage {
 		this.code = code;
 	}
 
-	public int getUserID() {
+	public String getUserID() {
 		return userID;
 	}
 
-	public void setUserID(int userID) {
+	public void setUserID(String userID) {
 		this.userID = userID;
 	}
 
-	public int getDestID() {
+	public String getDestID() {
 		return destID;
 	}
 
-	public void setDestID(int destID) {
+	public void setDestID(String destID) {
 		this.destID = destID;
 	}
 
@@ -65,13 +47,13 @@ public class ChatMessage {
 		return stringData;
 	}
 
-	public void setStringData(String jsonData) {
-		this.stringData = jsonData;
+	public void setStringData(String stringData) {
+		this.stringData = stringData;
 	}
 
 	@Override
 	public String toString() {
-		return "Message [code=" + code + ", userID=" + userID + ", destID=" + destID + ", stringData=" + stringData
+		return "ChatMessage [code=" + code + ", userID=" + userID + ", destID=" + destID + ", stringData=" + stringData
 				+ "]";
 	}
 	

@@ -32,6 +32,8 @@ public class LogService {
 			try {
 				this.wait();
 			} catch (Exception e) {
+//				this.notify();
+				return null;
 			}
 		}
 		
