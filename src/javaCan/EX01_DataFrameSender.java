@@ -21,7 +21,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
-public class EX01_DataFrameSender extends Application implements SerialPortEventListener{
+public class EX01_DataFrameSender extends Application {
 
 	private static final String PORTNAME = "COM16";
 	
@@ -63,7 +63,7 @@ public class EX01_DataFrameSender extends Application implements SerialPortEvent
 					in = new BufferedReader(new InputStreamReader(serialPort.getInputStream()));
 					
 					serialPort.setRTS(true);
-					serialPort.addEventListener(this);
+					serialPort.addEventListener(new SerialListener());
 					serialPort.notifyOnDataAvailable(true);
 					
 //					System.out.println("포트가 연결되었습니다.");
@@ -108,21 +108,23 @@ public class EX01_DataFrameSender extends Application implements SerialPortEvent
 		send(dataframe);
 	}
 	
-	@Override
-	public void serialEvent(SerialPortEvent event) {
-		if (event.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
-			displayText("get Something!");
-			try {
-				String line = null;
-				if (in.ready())
-					line = in.readLine();
-				displayText("받은 데이터 ] " + line);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
+	class SerialListener implements SerialPortEventListener {
+		@Override
+		public void serialEvent(SerialPortEvent event) {
+			if (event.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
+				displayText("get Something!");
+				try {
+					String line = null;
+					if (in.ready())
+						line = in.readLine();
+					displayText("받은 데이터 ] " + line);
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
-	}
+	}// class SerialListener
 	
 
 	// ===================================================
@@ -156,15 +158,9 @@ public class EX01_DataFrameSender extends Application implements SerialPortEvent
 		envBtn.setPrefSize(100, 50);
 		envBtn.setPadding(new Insets(10));
 		envBtn.setOnAction((e) -> {
-			String envInfo = "Z1C0x340000000600000006";
-			// :Z 1C 0x34 00000006 00000006
+			String envInfo = "Z1C0F340000000600000006";
+			// :Z 1C 0F34 00000006 00000006
 			sendDataFrame(envInfo);
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			sendDataFrame("G11");
 		});
 		
 		revEnableBtn = new Button("수신 시작");
