@@ -1,10 +1,12 @@
 package javaNetwork.multiChat;
 
+import java.util.Date;
 import java.util.LinkedList;
 
 public class LogService {
 	
 	private LinkedList<String> loglist = new LinkedList<String>();
+//	public Date date = new Date(System.currentTimeMillis());		// Test for 'Creation time'
 	
 	// Singleton
 	private LogService() {}
@@ -18,12 +20,12 @@ public class LogService {
 	}
 	
 	// methods
-	public synchronized void add(String log) {
+	public synchronized void addLog(String log) {
 		this.loglist.add(log);
 		this.notify();
 	}
 	
-	public synchronized String get() {
+	public synchronized String getLog() {
 		
 		while(this.loglist.isEmpty()) {
 			try {
