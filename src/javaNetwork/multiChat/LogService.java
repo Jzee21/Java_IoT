@@ -9,7 +9,9 @@ public class LogService {
 //	public Date date = new Date(System.currentTimeMillis());		// Test for 'Creation time'
 	
 	// Singleton
-	private LogService() {}
+	private LogService() {
+//		System.out.println("run - LogService()");
+	}
 	
 	private static class InstanceHandler {
 		public static final LogService INSTANCE = new LogService();
@@ -26,7 +28,6 @@ public class LogService {
 	}
 	
 	public synchronized String getLog() {
-		
 		while(this.loglist.isEmpty()) {
 			try {
 				this.wait();

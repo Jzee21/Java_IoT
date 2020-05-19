@@ -13,6 +13,7 @@ public class TestSingleton {
 		
 		LogService target = LogService.getInstance();
 		// Singleton field value - Creation time
+		// run - LogService()
 		
 		Thread.sleep(5000);
 		
