@@ -24,20 +24,28 @@ public class LogService {
 	// methods
 	public synchronized void addLog(String log) {
 		this.loglist.add(log);
-		this.notify();
+		notify();
 	}
 	
 	public synchronized String getLog() {
-		while(this.loglist.isEmpty()) {
+		String result = null;
+		
+		if(this.loglist.isEmpty()) {
 			try {
-				this.wait();
-			} catch (Exception e) {
-//				this.notify();
-				return null;
+				wait();
+			} catch (InterruptedException e) {
 			}
+			result = loglist.removeFirst();
 		}
 		
-		return this.loglist.removeFirst();
+		return result;
+	}
+	
+	public void throwsInterrupt() {
+		try {
+			throw new InterruptedException();
+		} catch (InterruptedException e) {
+		}
 	}
 
 }

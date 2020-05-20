@@ -1,6 +1,8 @@
-package javaNetwork.multiChat;
+package javaNetwork.multiChat.test;
 
 import java.util.Date;
+
+import javaNetwork.multiChat.LogService;
 
 public class TestSingleton {
 
