@@ -35,8 +35,6 @@ public class ChatService {
 
 	// methods
 	public ChatClient addClient(String nickname, Socket socket) {
-		System.out.println("addClient");
-		logService.addLog("addClient");
 		ChatClient client = null;
 		if((client = connections.get(nickname.toUpperCase())) == null) {
 			client = new ChatClient(nickname, socket);
@@ -44,13 +42,11 @@ public class ChatService {
 		} else {
 			client.setSocket(socket);
 		}
-		System.out.println("addClient2");
 		logService.addLog("[" + nickname + "][" + socket.getInetAddress().toString() + "] connected");
 		return client;
 	}
 	
 	public synchronized void removeAll() {
-		logService.addLog("call removeAll()");
 		for(String key : connections.keySet()) {
 			ChatClient client = connections.get(key);
 			client.close();
@@ -62,7 +58,7 @@ public class ChatService {
 		
 		switch (data.getCode().toUpperCase()) {
 		case "MESSAGE":
-			logService.addLog(data.getStringData());
+			logService.addLog("in handler" + data.getStringData());
 			break;
 
 		case "ROOMLIST":

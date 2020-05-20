@@ -129,14 +129,18 @@ public class Jzee_MultiRoomServer extends Application{
 		
 		Runnable getLog = () -> {
 			while(true) {
+				if(Thread.currentThread().isInterrupted()) {
+					logService.throwsInterrupt();
+					break;
+				}
 				try {
 					String log = logService.getLog();
 					displayText("[log] " + log);
 				} catch (Exception e) {
+					logService.throwsInterrupt();
 					break;
 				}
 			}
-			System.out.println("log service - end");
 		};
 		executor.submit(getLog);
 		
@@ -146,15 +150,12 @@ public class Jzee_MultiRoomServer extends Application{
 			while(true) {
 				try {
 					socket = server.accept();
-					displayText("accept()");
 					
 					BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 					String nickname = input.readLine();
-					displayText("nick : " + nickname);
 					
 					ChatClient client = chatService.addClient(nickname, socket);
 					executor.submit(client);
-					displayText(nickname + " ] run");
 					
 				} catch (SocketTimeoutException e) {	
 					if(Thread.interrupted()) {
@@ -175,33 +176,26 @@ public class Jzee_MultiRoomServer extends Application{
 	public void stopServer() {
 		
 		if(this.server != null) {
-//			displayText("stop 01");
-			System.out.println("stop 01");
 			try {
 				chatService.removeAll();
-//				displayText("stop 02");
-				System.out.println("stop 02");
 				
 				if(!this.server.isClosed()) {
 					server.close();
 					server = null;
 				}
-//				displayText("stop 03");
-				System.out.println("stop 03");
 				
 				if(executor != null && !executor.isShutdown()) {
-					executor.shutdown();
-					do { 
-						// 작업이 완료되었으면 즉시 정지 한다. 
-						if (executor.isTerminated()) {
-							executor.shutdownNow();
-						}
-						// 지정된 시간 별로(10초단위) 작업이 모든 작업이 중지되었는지 체크
-						// 작업이 완료되었으면 루프 해제
-					} while (!executor.awaitTermination(10, TimeUnit.SECONDS));
+					executor.shutdownNow();
+//					executor.shutdown();
+//					do { 
+//						// 작업이 완료되었으면 즉시 정지 한다. 
+//						if (executor.isTerminated()) {
+//							executor.shutdownNow();
+//						}
+//						// 지정된 시간 별로(10초단위) 작업이 모든 작업이 중지되었는지 체크
+//						// 작업이 완료되었으면 루프 해제
+//					} while (!executor.awaitTermination(10, TimeUnit.SECONDS));
 				}
-//				displayText("stop 04");
-				System.out.println("stop 04");
 			} catch (Exception e) {
 				// do nothing
 			}

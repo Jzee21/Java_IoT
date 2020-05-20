@@ -63,9 +63,7 @@ public class ChatClient implements Runnable {
 					try {
 						input.readLine();
 					} catch (Exception e) {
-						System.out.println("아오");
 					}
-					System.out.println(addr + " - socket close");
 					socket.shutdownInput();
 					socket.isOutputShutdown();
 					socket.close();
@@ -78,7 +76,6 @@ public class ChatClient implements Runnable {
 			this.socket = null;
 			this.input = null;
 			this.output = null;
-			System.out.println("[" + addr + "] closed");
 		}
 	} // close
 	
@@ -116,7 +113,6 @@ public class ChatClient implements Runnable {
 				break;
 			}
 		} // while
-		System.out.println("client finish");
 		
 	} // run
 	
