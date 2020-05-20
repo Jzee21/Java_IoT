@@ -135,7 +135,7 @@ public class Jzee_MultiRoomServer extends Application{
 				}
 				try {
 					String log = logService.getLog();
-					displayText("[log] " + log);
+					displayText("[ log ] " + log);
 				} catch (Exception e) {
 					logService.throwsInterrupt();
 					break;

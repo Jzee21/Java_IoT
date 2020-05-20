@@ -2,6 +2,7 @@ package javaNetwork.multiChat;
 
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +20,13 @@ public class ChatService {
 	private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").create();
 	
 	// Singleton
-	private ChatService() {}
+	private ChatService() {
+		this.chatrooms.put("A", new ChatRoom("A"));
+		this.chatrooms.put("B", new ChatRoom("B"));
+		this.chatrooms.put("C", new ChatRoom("C"));
+		this.chatrooms.put("D", new ChatRoom("D"));
+		this.chatrooms.put("E", new ChatRoom("E"));
+	}
 	
 	private static class InstanceHandler {
 		public static final ChatService INSTANCE = new ChatService();
@@ -54,15 +61,23 @@ public class ChatService {
 		}
 	}
 	
+	public List<String> getRoomList() {
+		List<String> roomNameList = new ArrayList<String>(chatrooms.keySet());
+		Collections.sort(roomNameList);
+		return roomNameList;
+	}
+	
+	
 	public void messageHandler(ChatClient from, ChatMessage data) {
 		
+		logService.addLog("[" + from.getNickname() + "] " + data.getStringData());
 		switch (data.getCode().toUpperCase()) {
 		case "MESSAGE":
-			logService.addLog("in handler" + data.getStringData());
+//			logService.addLog("in handler" + data.getStringData());
 			break;
 
 		case "ROOMLIST":
-			
+			from.send(new ChatMessage("ROOMLIST", "SERVER", from.getNickname(), gson.toJson(getRoomList())));
 			break;
 
 		case "NEW_ROOM":

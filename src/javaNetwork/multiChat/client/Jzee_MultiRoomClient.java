@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -14,17 +13,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import javaNetwork.multiChat.ChatClient;
-import javaNetwork.multiChat.ChatMessage;
-import javaNetwork.multiChat.ChatRoom;
+import javaNetwork.multiChat.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -41,10 +36,10 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
-public class Jzee_MultiRoomClient extends Application{
+public class Jzee_MultiRoomClient extends Application {
 	
 	// UI
-	private Stage window;
+	private Stage window; 
 	
 	private BorderPane root;
 	private FlowPane namePane, menuPane, inputPane;
@@ -53,11 +48,10 @@ public class Jzee_MultiRoomClient extends Application{
 	private Button connBtn, disconnBtn, createBtn, menuBtn;
 	private Label nameLabel;
 	
-	private ListView<String> roomListView;
+	private ListView<String> roomListView;				// 채팅방 목록
 	private ListView<String> participantsListView;		// 채팅방 참여목록
 	
 	// User
-	private int userID;
 	private String nickname;
 	private TextArea textarea;
 	
@@ -65,15 +59,9 @@ public class Jzee_MultiRoomClient extends Application{
 	private BufferedReader input;
 	private PrintWriter output;
 	private ExecutorService receiverPool;
-	private ExecutorService senderPool;
 	
-//	private Map<Integer, Client> users;
-//	private Map<Integer, Room> rooms;
-//	private Map<String, ChatClient> users;		// nickname, key
-//	private Map<String, Room> rooms;		// roomID, Room.class
-//	private Map<String, Integer> roomNames;	// roomName, roomID
-//	
-//	private Room currentRoom;
+	private Map<String, ChatRoom> roomList;
+	private String currentRoom = "DEFAULT";
 	
 	private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").create();
 	
@@ -100,53 +88,38 @@ public class Jzee_MultiRoomClient extends Application{
 		pane.setHgap(10);
 	}
 	
-//	private Map<Integer, ChatClient> users;		// nickname, key
-//	private Map<Integer, Room> rooms;		// roomID, Room.class
-//	private Map<String, Integer> roomNames;	// roomName, roomID
 	
-//	public Room(ChatRoom form) {
-//		this(form.getRoomID(), form.getRoomName());
-//	}
+	private void setChatTitle(String title) {
+		this.window.setTitle(title);
+	}
 	
-//	public void setRoomList(List<ChatRoom> list) {
-//		roomListView.getItems().clear();
-//		for(ChatRoom room : list) {
-//			if(!rooms.containsKey(room.getRoomID())) {
+	public void setRoomList(List<String> list) {
+		roomListView.getItems().clear();
+		for(String roomName : list) {
+//			if(!roomList.containsKey(room.getRoomName())) {
 //				Room newRoom = new Room(room);
 //				rooms.put(newRoom.getRoomID(), newRoom);
-////				roomNames.put(newRoom.getRoomName(), newRoom.getRoomID());
+//				roomNames.put(newRoom.getRoomName(), newRoom.getRoomID());
 //			}
-//			roomListView.getItems().add(room.getRoomName());
-//		}
-//	}
-//	
-//	public void setRoomPartList(List<ChatClient> list) {
-//		participantsListView.getItems().clear();
-//		if(list != null) {
-//			for(ChatClient part : list) {
-////				if(!users.containsKey(part.getUserID())) {
-////					users.put(part.getUserID(), part);
-////				}
-////				participantsListView.getItems().add(part.getNickname());
-//			}
-//		}
-//	}
-//	
-//	public void setCurrentRoom(Room room) {
-//		currentRoom = room;
-//		currentRoom.setUpdateFlag(true);
-//		if(currentRoom == null) {
-//			root.setCenter(textarea);
-//			window.setTitle("Multi Room Chat Client");
-//		} else {
-//			window.setTitle(room.getRoomName());
-//		}
-//	}
+			roomListView.getItems().add(roomName);
+		}
+	}
+	
+	public void setRoomPartList(List<String> list) {
+		participantsListView.getItems().clear();
+		if(list != null) {
+			for(String part : list) {
+				participantsListView.getItems().add(part);
+			}
+		}
+	}
 	
 	
 	// =================================================================
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		
+		this.window = primaryStage;
 		
 		root = new BorderPane();
 		root.setPrefSize(700, 500);
@@ -173,10 +146,12 @@ public class Jzee_MultiRoomClient extends Application{
 		
 		// participantsList
 		participantsListView = new ListView<String>();
-//		participantsListView.getSelectionModel().selectedItemProperty().addListener(
-//				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
+		participantsListView.setEditable(false);
+		participantsListView.getSelectionModel().selectedItemProperty().addListener(
+				(ObservableValue<?> arg0, Object arg1, Object arg2) -> {
 //					int index = participantsListView.getSelectionModel().getSelectedIndex();
-//				});
+					participantsListView.getSelectionModel().clearSelection();
+				});
 		
 		// Right GridPane
 		GridPane gridpane = new GridPane();
@@ -194,7 +169,7 @@ public class Jzee_MultiRoomClient extends Application{
 		inputPane = new FlowPane();
 		
 		
-		// namePane
+		// namePane --------------------
 		nameLabel = new Label("Nickname");
 		nameLabel.setStyle("-fx-font-size: 15");
 		nameLabel.setPrefSize(150, 40);
@@ -207,15 +182,9 @@ public class Jzee_MultiRoomClient extends Application{
 		connBtn = new Button("Conn");
 		connBtn.setPrefSize(150, 40);
 		connBtn.setOnAction((e) -> {
-//			displayText("send nickname");
-			// send nickname -- response id, roomList
 			String nickname = nameField.getText();
 			startClient(nickname);
-//			send(new ChatMessage("FIRST", nickname));
-//			send(nickname);
-			Platform.runLater(() -> {
-				root.setBottom(menuPane);
-			});
+			root.setBottom(menuPane);
 		});
 		
 		setBottomPane(namePane);
@@ -223,70 +192,59 @@ public class Jzee_MultiRoomClient extends Application{
 		namePane.setAlignment(Pos.CENTER);
 		root.setBottom(namePane);
 		
-		// menuPane
+		// menuPane --------------------
 		disconnBtn = new Button("Disconn");
 		disconnBtn.setPrefSize(150, 40);
 		disconnBtn.setOnAction((e) -> {
-//			System.out.println("disconnBtn call stopClient()");
-//			stopClient("DisconnBtn");
 			stopClient();
-			Platform.runLater(() -> {
-				root.setBottom(namePane);
-			});
+			root.setBottom(namePane);
 		});
 		
 		createBtn = new Button("Create Room");
 		createBtn.setPrefSize(150, 40);
 		createBtn.setOnAction((e) -> {
 			// Enter Room Name - Dialog
-//			Dialog<String> dialog = new TextInputDialog("Please Enter Room Name");
-//			dialog.setTitle("Room Setting");
-//			dialog.setHeaderText("Room Name Setting. Please Enter Room Name");
-//			
-//			Optional<String> result = dialog.showAndWait();
-//			String entered = "";
-//			if(result.isPresent()) {
-//				// Nickname 입력, 확인버튼
-//				entered = result.get();
-//			}
+			Dialog<String> dialog = new TextInputDialog("Please Enter Room Name");
+			dialog.setTitle("Room Setting");
+			dialog.setHeaderText("Room Name Setting. Please Enter Room Name");
+			
+			Optional<String> result = dialog.showAndWait();
+			String entered = "";
+			if(result.isPresent()) {
+				// Nickname 입력, 확인버튼
+				entered = result.get();
+			}
 			
 //			send(new ChatMessage("NEW_ROOM", userID, 0, entered));
-			Platform.runLater(() -> {
-				root.setBottom(inputPane);
-				inputField.setEditable(true);
-			});
+			
+			// 추후 메서드에서 한번에 처리
+//			root.setBottom(inputPane);
+//			inputField.setEditable(true);
 		});
 		
 		setBottomPane(menuPane);
 		menuPane.getChildren().addAll(disconnBtn, createBtn);
 		
-		// inputPane
+		// inputPane --------------------
 		menuBtn = new Button("Menu");
 		menuBtn.setPrefSize(150, 40);
 		menuBtn.setOnAction((e) -> {
-			Platform.runLater(() -> {
-				root.setBottom(menuPane);
-//				setCurrentRoom(null);
-			});
+			root.setBottom(menuPane);
+			participantsListView.getSelectionModel().clearSelection();
 		});
 		
 		inputField = new TextField();
 		inputField.setEditable(false);
 		inputField.setPrefSize(500, 40);
 		inputField.setOnAction((e) -> {
-//			send(inputField.getText());
-//			displayText(inputField.getText());
-
 			String text = inputField.getText();
 			if(text.equals("@EXIT")) {
-//				send(new ChatMessage("EXIT_ROOM", userID, currentRoom.getRoomID()));
+//				send(new ChatMessage("EXIT_ROOM	", userID, currentRoom.getRoomID()));
 			} else {
-//				send(new ChatMessage("MESSAGE", userID, currentRoom.getRoomID(), text));
 				send(new ChatMessage("MESSAGE", nickname, "", text));
 			}
-			Platform.runLater(() -> {
-				inputField.clear();
-			});
+			
+			inputField.clear();
 		});
 		
 		setBottomPane(inputPane);
@@ -320,7 +278,7 @@ public class Jzee_MultiRoomClient extends Application{
 		connBtn.setDisable(true);
 		disconnBtn.setDisable(false);
 		receiverPool = Executors.newFixedThreadPool(1);
-		senderPool = Executors.newFixedThreadPool(1);
+		roomList = new HashMap<String, ChatRoom>();
 //		users = new HashMap<String, ChatClient>();
 //		rooms = new HashMap<String, Room>();
 //		roomNames = new HashMap<String, Integer>();
@@ -346,6 +304,12 @@ public class Jzee_MultiRoomClient extends Application{
 			receive();
 		};
 		receiverPool.submit(runnable);
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		send(new ChatMessage("ROOMLIST", nickname, null, null));
 	} // startClient()
 	
 	public void stopClient() {
@@ -358,25 +322,10 @@ public class Jzee_MultiRoomClient extends Application{
 			}
 			if(receiverPool != null && !receiverPool.isShutdown()) {
 				List<Runnable> list = receiverPool.shutdownNow();
-//				receiverPool.shutdown();
-//				do {
-//					if(receiverPool.isTerminated()) {
-//						receiverPool.shutdownNow();
-//					}
-//				} while (!receiverPool.awaitTermination(10, TimeUnit.SECONDS));
-			}
-			if(senderPool != null && !senderPool.isShutdown()) {
-				List<Runnable> list = senderPool.shutdownNow();
-//				senderPool.shutdown();
-//				do {
-//					if(senderPool.isTerminated()) {
-//						senderPool.shutdownNow();
-//					}
-//				} while (!senderPool.awaitTermination(10, TimeUnit.SECONDS));
 			}
 		} catch (Exception e) {
 			displayText("[ Disconnection Error ]");
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		Platform.runLater(() -> {
 			connBtn.setDisable(false);
@@ -397,6 +346,20 @@ public class Jzee_MultiRoomClient extends Application{
 						// Server's socket closed
 						throw new IOException();
 					} else {
+						
+						ChatMessage data = gson.fromJson(line, ChatMessage.class);
+						switch (data.getCode()) {
+						case "ROOMLIST":
+//							List<String> roomNameList = null;
+//							roomNameList = gson.fromJson(data.getStringData(), roomNameList.getClass());
+							List<String> roomNameList = Arrays.asList(gson.fromJson(data.getStringData(), String[].class));
+							setRoomList(roomNameList);
+							break;
+
+						default:
+							break;
+						}
+						
 //					ChatMessage data = gson.fromJson(line, ChatMessage.class);
 //					displayText("? ]" + data.getStringData());
 						
@@ -494,17 +457,7 @@ public class Jzee_MultiRoomClient extends Application{
 	}
 	
 	public void send(ChatMessage message) {
-		Runnable runnable = () -> {
-			try {
-				String jsonMsg = gson.toJson(message);
-				output.println(jsonMsg);
-				output.flush();
-			} catch (Exception e) {
-				displayText("send Error");
-				stopClient();
-			}
-		};
-		senderPool.submit(runnable);
+		this.send(gson.toJson(message));
 	} // send(Message message)
 	
 }

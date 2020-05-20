@@ -79,11 +79,15 @@ public class ChatClient implements Runnable {
 		}
 	} // close
 	
-	public void send(String msg) {
+	public void send(String text) {
 		if(this.socket != null && !socket.isClosed()) {
-			output.println(msg);
+			output.println(text);
 			output.flush();
 		}
+	}
+	
+	public void send(ChatMessage message) {
+		this.send(service.getGson().toJson(message));
 	}
 	
 	@Override
