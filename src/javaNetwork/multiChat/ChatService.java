@@ -73,26 +73,52 @@ public class ChatService {
 		logService.addLog("[" + from.getNickname() + "] " + data.getStringData());
 		switch (data.getCode().toUpperCase()) {
 		case "MESSAGE":
-//			logService.addLog("in handler" + data.getStringData());
+			/*	Message to room participants	*/
+			// data ["MESSAGE", "nickname", "roomName", "message"]
+			for (String key : connections.keySet()) {
+				ChatClient client = connections.get(key);
+				client.send(data);
+			}
 			break;
 
 		case "ROOMLIST":
+			// data ["MESSAGE", "nickname", "roomName", "message"]
 			from.send(new ChatMessage("ROOMLIST", "SERVER", from.getNickname(), gson.toJson(getRoomList())));
 			break;
 
 		case "NEW_ROOM":
+			/*	Create a new chat room,
+				Add owner to user list		*/
+			// data ["MESSAGE", "nickname", "roomName", "message"]
+			ChatRoom newRoom = new ChatRoom(data.getStringData());
+			newRoom.addParticipants(from.getNickname());
+			this.chatrooms.put(newRoom.getRoomName().toUpperCase(), newRoom);
 			
+			/* Update the list of chat rooms for all users	*/
+			for (String key : connections.keySet()) {
+				ChatClient client = connections.get(key);
+				client.send(new ChatMessage("ROOMLIST", "SERVER", from.getNickname(), gson.toJson(getRoomList())));
+			}
+			
+			/*	Send the new chat room information to the owner		*/
+			from.send(new ChatMessage("NEW_ROOM", from.getNickname(), data.getUserID(), gson.toJson(newRoom)));
 			break;
 
 		case "ENTER_ROOM":
+			// data ["ENTER_ROOM", "nickname", "roomName", null]
+			
 			
 			break;
 
 		case "EXIT_ROOM":
+			// data ["EXIT_ROOM", "nickname", "roomName", "@EXIT"]
+			
 			
 			break;
 			
 		case "":
+			// data ["", "nickname", null, null]
+			
 			
 			break;
 
@@ -100,10 +126,10 @@ public class ChatService {
 			break;
 		}
 		
-		for (String key : connections.keySet()) {
-			ChatClient client = connections.get(key);
-			client.send(data.getStringData());
-		}
+//		for (String key : connections.keySet()) {
+//			ChatClient client = connections.get(key);
+//			client.send(data.getStringData());
+//		}
 		
 	}
 
