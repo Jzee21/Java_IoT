@@ -35,6 +35,7 @@ public class LogService {
 				wait();
 			} catch (InterruptedException e) {
 			}
+		} else {
 			result = loglist.removeFirst();
 		}
 		

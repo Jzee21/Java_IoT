@@ -71,10 +71,11 @@ public class ChatService {
 	public void messageHandler(ChatClient from, ChatMessage data) {
 		
 		logService.addLog("[" + from.getNickname() + "] " + data.getCode());
+		logService.addLog(data.toString());
 		switch (data.getCode().toUpperCase()) {
 		case "MESSAGE":
-			/*	Message to room participants	*/
 			// data ["MESSAGE", "nickname", "roomName", "message"]
+			/*	Message to room participants	*/
 			for (String key : connections.keySet()) {
 				ChatClient client = connections.get(key);
 				client.send(data);
@@ -84,40 +85,66 @@ public class ChatService {
 		case "ROOMLIST":
 			// data ["MESSAGE", "nickname", "roomName", "message"]
 			from.send(new ChatMessage("ROOMLIST", "SERVER", from.getNickname(), gson.toJson(getRoomList())));
+			
 			break;
 
 		case "NEW_ROOM":
+			// data ["MESSAGE", "nickname", "roomName", "message"]
 			/*	Create a new chat room,
 				Add owner to user list		*/
-			// data ["MESSAGE", "nickname", "roomName", "message"]
-			ChatRoom newRoom = new ChatRoom(data.getStringData());
+			ChatRoom newRoom = new ChatRoom(data.getDestID());
 			newRoom.addParticipants(from.getNickname());
 			this.chatrooms.put(newRoom.getRoomName().toUpperCase(), newRoom);
 			
+			logService.addLog("새 방 받아라 1");
 			/* Update the list of chat rooms for all users	*/
 			for (String key : connections.keySet()) {
 				ChatClient client = connections.get(key);
-				client.send(new ChatMessage("ROOMLIST", "SERVER", from.getNickname(), gson.toJson(getRoomList())));
+				client.send(new ChatMessage("ROOMLIST", "SERVER", newRoom.getRoomName(), gson.toJson(getRoomList())));
 			}
 			
+			logService.addLog("새 방 받아라 2");
 			/*	Send the new chat room information to the owner		*/
-			from.send(new ChatMessage("NEW_ROOM", from.getNickname(), data.getUserID(), gson.toJson(newRoom)));
+			from.send(new ChatMessage("NEW_ROOM", "SERVER", data.getUserID(), gson.toJson(newRoom)));
+			logService.addLog("새 방 받아라 3");
+			
 			break;
 
 		case "ENTER_ROOM":
 			// data ["ENTER_ROOM", "nickname", "roomName", null]
-			
+			/*	New participants enter the chat room		*/
+			ChatRoom enterRoom = this.chatrooms.get(data.getDestID().toUpperCase());
+			if(enterRoom != null) {
+				/*	Add new participants to the chat room	*/
+//				System.out.println(data.getUserID());
+				enterRoom.addParticipants(data.getUserID());
+//				enterRoom = this.chatrooms.get(data.getDestID().toUpperCase());
+				logService.addLog("방 " + data.getDestID() + " 좀 달래");
+				
+				/*	Send room information to new participants	*/
+				data.setStringData(gson.toJson(enterRoom));
+				logService.addLog(gson.toJson(data));		// do not run
+				from.send(data);
+				logService.addLog("방 " + data.getDestID() + " 좀 달래 2");
+				
+				try {
+					/*	Announce new participants to all participants	*/
+					ChatMessage notice = new ChatMessage("UPDATE_PART", "SERVER", enterRoom.getRoomName(), gson.toJson(enterRoom.getParticipants()));
+					for (String key : enterRoom.getParticipants()) {
+//						System.out.println(key);
+						ChatClient target = connections.get(key.toUpperCase());
+						target.send(notice);
+					}
+					logService.addLog("방 " + data.getDestID() + " 좀 달래 3");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			
 			break;
 
 		case "EXIT_ROOM":
 			// data ["EXIT_ROOM", "nickname", "roomName", "@EXIT"]
-			
-			
-			break;
-			
-		case "":
-			// data ["", "nickname", null, null]
 			
 			
 			break;

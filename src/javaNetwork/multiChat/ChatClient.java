@@ -103,14 +103,12 @@ public class ChatClient implements Runnable {
 		String line = "";
 		while(true) {
 			try {
-				if(input.ready()) {
-					line = input.readLine();
-					if(line == null) {
-						throw new IOException("Client Closed");
-					} else {
-						ChatMessage data = service.getGson().fromJson(line, ChatMessage.class);
-						service.messageHandler(this, data);
-					}
+				line = input.readLine();
+				if(line == null) {
+					throw new IOException("Client Closed");
+				} else {
+					ChatMessage data = service.getGson().fromJson(line, ChatMessage.class);
+					service.messageHandler(this, data);
 				}
 			} catch (IOException e) {
 				close();

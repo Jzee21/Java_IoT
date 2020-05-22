@@ -1,23 +1,18 @@
-package javaNetwork.multiChat;
+package javaNetwork.multiChat.client.vo;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.gson.annotations.SerializedName;
 
 import javafx.scene.control.TextArea;
 
 public class ChatRoom {
 	
-//	@SerializedName("$roomName")
 	private String roomName;
-//	@SerializedName("$textarea")
 	private transient TextArea textarea;
-//	@SerializedName("$participants")
 	private List<String> participants;
 	
 	// constructor
-	private ChatRoom() {
+	public ChatRoom() {
 		this(null);
 	}
 	

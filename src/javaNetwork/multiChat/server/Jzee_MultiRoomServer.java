@@ -133,13 +133,13 @@ public class Jzee_MultiRoomServer extends Application{
 					logService.throwsInterrupt();
 					break;
 				}
-				try {
-					String log = logService.getLog();
-					displayText("[ log ] " + log);
-				} catch (Exception e) {
-					logService.throwsInterrupt();
-					break;
-				}
+				String log = logService.getLog();
+				displayText("[ log ] " + log);
+//				try {
+//				} catch (Exception e) {
+//					logService.throwsInterrupt();
+//					break;
+//				}
 			}
 		};
 		executor.submit(getLog);
@@ -154,6 +154,7 @@ public class Jzee_MultiRoomServer extends Application{
 					BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 					String nickname = input.readLine();
 					
+					displayText("addClient(" + nickname + ")");
 					ChatClient client = chatService.addClient(nickname, socket);
 					executor.submit(client);
 					
