@@ -70,10 +70,13 @@ public class ChatService {
 	
 	public void messageHandler(ChatClient from, ChatMessage data) {
 		
-		logService.addLog("[" + from.getNickname() + "] " + data.getStringData());
+		logService.addLog("[" + from.getNickname() + "] " + data.getCode());
 		switch (data.getCode().toUpperCase()) {
 		case "MESSAGE":
-//			logService.addLog("in handler" + data.getStringData());
+			for (String key : connections.keySet()) {
+				ChatClient client = connections.get(key);
+				client.send(data);
+			}
 			break;
 
 		case "ROOMLIST":
@@ -98,11 +101,6 @@ public class ChatService {
 
 		default:
 			break;
-		}
-		
-		for (String key : connections.keySet()) {
-			ChatClient client = connections.get(key);
-			client.send(data.getStringData());
 		}
 		
 	}
