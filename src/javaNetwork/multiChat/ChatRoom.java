@@ -46,6 +46,21 @@ public class ChatRoom {
 	public void setParticipants(List<String> participants) {
 		this.participants = participants;
 	}
+	
+	public boolean addParticipants(String nickname) {
+		if(!this.participants.contains(nickname)) {
+			return this.participants.add(nickname);
+		} else
+			return false;
+//		return this.participants.add(nickname);
+	}
+	
+	public boolean removeParticipants(String nickname) {
+		if(!this.participants.contains(nickname)) {
+			return this.participants.remove(nickname);
+		} else
+			return false;
+	}
 
 	@Override
 	public String toString() {
