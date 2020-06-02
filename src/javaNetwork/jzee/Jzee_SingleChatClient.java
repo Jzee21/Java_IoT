@@ -75,23 +75,23 @@ public class Jzee_SingleChatClient extends Application {
 			tf.setVisible(true);
 			id = idtf.getText();
 			connBtn.setDisable(true);
-//			try {
-//				socket = new Socket("localhost", 55566);
-//				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//				pr = new PrintWriter(socket.getOutputStream());
-//				
-//				System.out.println("[" + socket.getInetAddress() + "] connected");
-//				tf.setDisable(false);
-//				connBtn.setDisable(true);
-//				
-//				ReceiveRunnable receiver = new ReceiveRunnable(br);
-//				executor.execute(receiver);
-//				
-//			} catch (UnknownHostException e1) {
-//				e1.printStackTrace();
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
+			try {
+				socket = new Socket("localhost", 55566);
+				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				pr = new PrintWriter(socket.getOutputStream());
+				
+				System.out.println("[" + socket.getInetAddress() + "] connected");
+				tf.setDisable(false);
+				connBtn.setDisable(true);
+				
+				ReceiveRunnable receiver = new ReceiveRunnable(br);
+				executor.execute(receiver);
+				
+			} catch (UnknownHostException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		});
 		
 		idtf = new TextField();

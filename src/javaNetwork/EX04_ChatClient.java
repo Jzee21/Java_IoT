@@ -107,9 +107,10 @@ public class EX04_ChatClient extends Application {
 		//
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
-		primaryStage.setTitle("Date Client");
+		primaryStage.setTitle("Chat Client");
 		primaryStage.setOnCloseRequest(e -> {
 			// System.exit(0);
+			executor.shutdownNow();
 		});
 		primaryStage.show();
 		
@@ -129,7 +130,10 @@ public class EX04_ChatClient extends Application {
 			try {
 				while(true) {
 					msg = br.readLine();
-					if(msg == null)	break;
+					if(msg == null)	{
+						socket.close();
+						break;
+					}
 					printMsg(msg);
 				}
 			} catch (Exception e) {

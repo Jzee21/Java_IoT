@@ -112,7 +112,7 @@ public class EX04_ChatServer extends Application {
 		// stage
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
-		stage.setTitle("Multi Echo Server");
+		stage.setTitle("Multi Chat Server");
 		stage.setOnCloseRequest((e) -> {
 			executorService.shutdownNow();
 		});

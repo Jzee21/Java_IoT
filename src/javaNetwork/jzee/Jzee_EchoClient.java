@@ -110,9 +110,9 @@ public class Jzee_EchoClient extends Application {
 		primaryStage.setTitle("Date Client");
 		primaryStage.setOnCloseRequest(e -> {
 			try {
+				if(socket != null) socket.close();
 				if(br != null) br.close();
 				if(pr != null) pr.close();
-				if(socket != null) socket.close();
 			} catch (Exception e2) {
 				e2.printStackTrace();
 			}

@@ -28,6 +28,8 @@ public class EX02_EchoClient extends Application {
 	private Socket socket;
 	private BufferedReader br;
 	private PrintWriter pr;
+	
+	private Thread receiver;
 
 	private void printMsg(String msg) {
 		Platform.runLater(() -> {
@@ -53,30 +55,36 @@ public class EX02_EchoClient extends Application {
 		connBtn.setPrefSize(250, 50);
 		connBtn.setOnAction((e) -> {
 			ta.clear();
-			try {
-				socket = new Socket("localhost", 55556);
-				br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				pr = new PrintWriter(socket.getOutputStream());
-								
-				String msg = br.readLine();
-				if(msg.equals("Error")) {
-					printMsg("현재 접속자가 많아 서비스 이용이 어렵습니다.\n잠시 후 다시 이용해주세요.");					
-				} else {					
-					System.out.println("[" + socket.getInetAddress() + "] connected");
-					tf.setDisable(false);
-					connBtn.setDisable(true);
+			
+			Runnable runnable = () -> {
+				try {
+					socket = new Socket("localhost", 55556);
+					br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					pr = new PrintWriter(socket.getOutputStream());
+					
+					String msg = br.readLine();
+					if(msg.equals("Error")) {
+						printMsg("현재 접속자가 많아 서비스 이용이 어렵습니다.\n잠시 후 다시 이용해주세요.");					
+					} else {					
+						System.out.println("[" + socket.getInetAddress() + "] connected");
+						tf.setDisable(false);
+						connBtn.setDisable(true);
+					}
+					
+				} catch (UnknownHostException e1) {
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				}
-				
-			} catch (UnknownHostException e1) {
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+			};
+			receiver = new Thread(runnable);
+			receiver.start();
+			
 		});
 		
 		tf = new TextField();
 		tf.setPrefSize(400, 50);
-		tf.setDisable(true);
+		tf.setDisable(false);
 		tf.setOnAction((e) -> {
 //			if (((KeyEvent)e).getCode().equals(KeyCode.ENTER)) {
 //				
@@ -113,6 +121,7 @@ public class EX02_EchoClient extends Application {
 		primaryStage.setTitle("Date Client");
 		primaryStage.setOnCloseRequest(e -> {
 			// System.exit(0);
+			receiver.interrupt();
 		});
 		primaryStage.show();
 		
